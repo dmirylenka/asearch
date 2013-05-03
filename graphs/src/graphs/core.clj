@@ -1,7 +1,8 @@
 (ns graphs.core
   (:require [clojure [string :as string]
                      [set :as set]]
-            [clojure.core [reducers :as r]]))
+            [clojure.core [reducers :as r]]
+            [utils [core :as u]]))
 
 (defprotocol IDigraphInternal
   (get-nodes [this])
@@ -347,7 +348,7 @@
      (add-nodes-safe (get-nodes graph2))
      (add-links-safe (get-links graph2))))
 
-(defn distances-from [graph node & more]
+(defn distances-from* [graph node & more]
   (let [opt (apply hash-map more)
         restart (fn [distances start-node] (assoc distances start-node 0)) 
         descend (fn [distances node-from node-to]
@@ -355,12 +356,20 @@
     (search graph :node-order [node] :mode :bfs :direction (:direction opt)
             :env {} :restart restart :descend descend)))
 
+(defn distances-up [graph node]
+  (if-let [dist (:distances graph)]
+    (dist node)
+    (distances-from* graph node :direction :backward)))
+
+(defn cache-distances [graph]
+  (assoc graph :distances (u/val-map (partial distances-up graph) (get-nodes graph))))
+
 ;inefficient implementation: computes paths up to the roots (not only to the closest common ancestor)
 (defn dag-distance
   "Computes the length of the shortest path between two nodes that goes through a common ancestor." 
   [graph node1 node2]
-  (let [dist1 (distances-from graph node1 :direction :backward)
-        dist2 (distances-from graph node2 :direction :backward)
+  (let [dist1 (distances-up graph node1)
+        dist2 (distances-up graph node2)
         common-parents (filter (set (keys dist1)) (keys dist2))
         score-fn #(+ (dist1 %) (dist2 %))
         closest-parent (when-not (empty? common-parents)

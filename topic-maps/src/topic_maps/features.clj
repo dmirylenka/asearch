@@ -33,17 +33,41 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Features of the topic-maps ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+;(defn paper-coverage
+;  "Percent of documents covered by given topics."
+;  [topic-map submap]
+;  (/ (n-docs submap)
+;     (n-docs topic-map)))
+
+;rewritten
 (defn paper-coverage
   "Percent of documents covered by given topics."
-  [topic-map submap]
-  (/ (n-docs submap)
-     (n-docs topic-map)))
+  ([topic-map] {:value 0 :docs #{} :ndocs-total (n-docs topic-map)})
+  ([topic-map submap feature new-topic]
+   (let [{:keys [docs ndocs-total]} feature
+         new-docs (covered-docs topic-map [new-topic])
+         docs (into docs new-docs)
+         ndocs (count docs)]
+     (assoc feature
+       :docs docs
+       :value (/ ndocs ndocs-total)))))
 
+;(defn direct-doc-coverage
+;  "Percent of documents covered by given topics."
+;  [topic-map submap]
+;  (/ (->> submap get-topics (mapcat #(proper-docs topic-map %)) set count)
+;     (n-docs topic-map)))
+
+;rewritten
 (defn direct-doc-coverage
   "Percent of documents covered by given topics."
-  [topic-map submap]
-  (/ (->> submap get-topics (mapcat #(proper-docs topic-map %)) set count)
-     (n-docs topic-map)))
+  ([topic-map] {:value 0 :docs #{} :ndocs-total (n-docs topic-map)})
+  ([topic-map submap feature new-topic]
+   (let [{:keys [docs ndocs-total]} feature
+         docs (into docs (proper-docs topic-map new-topic))]
+     (assoc feature
+            :docs docs
+            :value (/ (count docs) ndocs-total)))))
 
 (defn distant-paper-coverage
   "Distance-weighted paper coverage."
@@ -67,31 +91,71 @@
     (map #(/ (count %) ndocs) (iter [] (set topics) topics))))
 
 (defn topic-coverage
-  "Percent of documents covered by given topics."
   [topic-map submap]
   (/ (n-topics submap) (n-topics topic-map)))
 
+;(defn avg-topic-freq
+;  "Percent of documents covered by given topics."
+;  [topic-map submap]
+;  (/ (u/avg (map (partial freq topic-map) (get-topics submap)))
+;     (n-docs topic-map)))
+
+;rewritten
 (defn avg-topic-freq
   "Percent of documents covered by given topics."
-  [topic-map submap]
-  (/ (u/avg (map (partial freq topic-map) (get-topics submap)))
-     (n-docs topic-map)))
+  ([topic-map] {:value 0 :freqs [] :ndocs-total (n-docs topic-map)})
+  ([topic-map submap feature new-topic]
+   (let [{:keys [freqs ndocs-total]} feature
+         freqs (conj freqs (freq topic-map new-topic))]
+     (assoc feature
+            :freqs freqs
+            :value (/ (u/avg freqs) ndocs-total)))))
 
+;(defn min-topic-freq
+;  "Percent of documents covered by given topics."
+;  [topic-map submap]
+;  (/ (apply min (map (partial freq topic-map) (get-topics submap)))
+;     (n-docs topic-map)))
+
+;rewritten
 (defn min-topic-freq
   "Percent of documents covered by given topics."
-  [topic-map submap]
-  (/ (apply min (map (partial freq topic-map) (get-topics submap)))
-     (n-docs topic-map)))
+  ([topic-map] {:value 0 :freqs [] :ndocs-total (n-docs topic-map)})
+  ([topic-map submap feature new-topic]
+   (let [{:keys [freqs ndocs-total]} feature
+         freqs (conj freqs (freq topic-map new-topic))]
+     (assoc feature
+            :freqs freqs
+            :value (/ (apply min freqs) ndocs-total)))))
 
+;(defn avg-cum-freq
+;  [topic-map submap]
+;  (/ (u/avg (map #(count (covered-docs submap [%])) (get-topics submap)))
+;     (n-docs topic-map)))
+
+;rewritten
 (defn avg-cum-freq
-  [topic-map submap]
-  (/ (u/avg (map #(count (covered-docs submap [%])) (get-topics submap)))
-     (n-docs topic-map)))
+  ([topic-map] {:value 0 :freqs [] :ndocs-total (n-docs topic-map)})
+  ([topic-map submap feature new-topic]
+   (let [{:keys [freqs ndocs-total]} feature
+         freqs (conj freqs (count (covered-docs submap [new-topic])))]
+     (assoc feature
+            :freqs freqs
+            :value (/ (u/avg freqs) ndocs-total)))))
+
+;(defn min-cum-freq
+;  [topic-map submap]
+;  (/ (apply min (map #(count (covered-docs submap [%])) (get-topics submap)))
+;     (n-docs topic-map)))
 
 (defn min-cum-freq
-  [topic-map submap]
-  (/ (apply min (map #(count (covered-docs submap [%])) (get-topics submap)))
-     (n-docs topic-map)))
+  ([topic-map] {:value 0 :freqs [] :ndocs-total (n-docs topic-map)})
+  ([topic-map submap feature new-topic]
+   (let [{:keys [freqs ndocs-total]} feature
+         freqs (conj freqs (count (covered-docs submap [new-topic])))]
+     (assoc feature
+            :freqs freqs
+            :value (/ (apply min freqs) ndocs-total)))))
 
 (defn distant-topic-coverage
   "Distance-weighted topic-coverage."
@@ -130,32 +194,66 @@
                (get @result %))]
     (map ftr (range n))))
 
+;(defn partition-coef
+;  "Partition coefficient of the topic map viewed as fuzzy clustering.
+;   Equals the average squared membership level across all elements and clusters."
+;  [topic-map submap]
+;  (let [{:keys [topic-graph topic-docs]} submap
+;        ntopics (fn ntopics [doc]
+;                  (->> doc
+;                    (g/in-links topic-docs)
+;                    (#(g/reachable topic-graph % :direction :backward))
+;                    count))]
+;    (if (< (n-docs submap) 2) 1 
+;      (->> (get-docs submap) (map ntopics) (map #(/ 1 %)) u/avg))))
+
+;rewritten
 (defn partition-coef
   "Partition coefficient of the topic map viewed as fuzzy clustering.
    Equals the average squared membership level across all elements and clusters."
-  [topic-map submap]
-  (let [{:keys [topic-graph topic-docs]} submap
-        ntopics (fn ntopics [doc]
-                  (->> doc
-                    (g/in-links topic-docs)
-                    (#(g/reachable topic-graph % :direction :backward))
-                    count))]
-    (if (< (n-docs submap) 2) 1 
-      (->> (get-docs submap) (map ntopics) (map #(/ 1 %)) u/avg))))
+  ([topic-map] {:value 1 :doc-topic-counts {}})
+  ([topic-map submap feature new-topic]
+    (let [{:keys [doc-topic-counts]} feature
+        ; {:keys [topic-graph topic-docs]} submap
+          docs (covered-docs topic-map [new-topic])
+          doc-topic-counts (merge-with + doc-topic-counts
+                             (u/val-map (constantly 1) docs))]
+      (assoc feature
+             :doc-topic-counts doc-topic-counts
+             :value (if (< (n-docs submap) 2) 1 
+                      (->> doc-topic-counts vals (map #(/ 1 %)) u/avg))))))
 
+;(defn avg-pairwise-dist
+;  "Avegage pairwise distance between the topics in the map.
+;   Distance between two nodes is the length of the shortest undirected path going through a common ancestor."
+;  [topic-map submap]
+;  (if (= 1 (n-topics submap)) 0
+;    (let [{:keys [topic-graph topic-docs doc-map]} topic-map
+;          topics (get-topics submap)
+;          topic-pairs (for [topic1 topics topic2 topics
+;                            :when (< 0 (.compareTo (str topic1) (str topic2)))]
+;                        [topic1 topic2])
+;          distances (map (partial apply g/dag-distance topic-graph) topic-pairs)
+;          map-01 (fn [dist] (if dist (/ dist (inc dist)) 1))]
+;      (u/avg (map map-01 distances)))))
+
+(defn map-01 [x]
+  (if x (/ x (+ 1 x)) 1))
+
+;rewritten
 (defn avg-pairwise-dist
   "Avegage pairwise distance between the topics in the map.
    Distance between two nodes is the length of the shortest undirected path going through a common ancestor."
-  [topic-map submap]
-  (if (= 1 (n-topics submap)) 0
-    (let [{:keys [topic-graph topic-docs doc-map]} topic-map
-          topics (get-topics submap)
-          topic-pairs (for [topic1 topics topic2 topics
-                            :when (< 0 (.compareTo (str topic1) (str topic2)))]
-                        [topic1 topic2])
-          distances (map (partial apply g/dag-distance topic-graph) topic-pairs)
-          map-01 (fn [dist] (if dist (/ dist (inc dist)) 1))]
-      (u/avg (map map-01 distances)))))
+  ([topic-map] {:value 0 :distances []})
+  ([topic-map submap old-value new-topic]
+   (let [{:keys [distances]} old-value
+         {:keys [topic-graph]} topic-map
+         topics (get-topics submap)
+         new-dist (mapv #(g/dag-distance topic-graph new-topic %) topics)
+         all-dist (into distances new-dist)]
+     {:distances all-dist
+      :value (if (empty? all-dist) 0
+               (u/avg (map map-01 all-dist)))})))
 
 (defn unevenness
   "Measures how uneven in size are sibling topics and averages the result across all sibling topic sets.
@@ -225,17 +323,40 @@
         (apply +)
         (#(/ % norm-const))))))
 
+;(defn n-connected
+;  "Computes the number of connected components in a topic submap."
+;  ([topic-map submap]
+;   (/ (count (g/weakly-connected (:topic-graph submap)))
+;      (n-topics submap))))
+
+;rewritten
 (defn n-connected
   "Computes the number of connected components in a topic submap."
-  ([topic-map submap]
-   (/ (count (g/weakly-connected (:topic-graph submap)))
-      (n-topics submap))))
+  ([topic-map]
+   (let [components (g/weakly-connected (:topic-graph topic-map))
+         comp-id-map (into {} (for [[component id] (map vector components (range))
+                                    vertex component]
+                                [vertex id]))]
+     {:value 0 :comp-id-map comp-id-map :comp-ids #{}}))
+  ([topic-map submap feature  new-topic]
+   (let [{:keys [comp-id-map value comp-ids]} feature
+         comp-id (comp-id-map new-topic)
+         comp-ids (conj comp-ids comp-id)
+         ntopics (inc (n-topics submap))]
+     (assoc feature
+            :comp-id-map comp-id-map
+            :comp-ids comp-ids
+            :value (/ (count comp-ids) ntopics)))))
 
-; TODO normalize ?
-(defn n-links
-  "Computes the number of links in the topic sub-map."
-  [topic-map submap]
-    (->> submap get-topics (mapcat (partial child-topics submap)) count))
+;; TODO normalize ?
+;(defn n-links
+;  "Computes the number of links in the topic sub-map."
+;  [topic-map submap]
+;    (->> submap get-topics (mapcat (partial child-topics submap)) count))
+;(defn n-links
+;  "Computes the number of links in the topic sub-map."
+;  [topic-map submap]
+;    (->> submap get-topics (mapcat (partial child-topics submap)) count))
 
 ; TODO normalize ?
 (defn avg-n-adj
@@ -260,13 +381,28 @@
         safe-max #(if (empty? %) 1 (apply max %))]
     (dec (->> submap get-topics (map nadj) (remove zero?) safe-max))))
 
+;(defn main-subtopics
+;  "Percent of nodes covered by the subhierarchy of the main topic."
+;  [topic-map {:as submap :keys [main-topic]}]
+;  {:pre [main-topic]}
+;  (/ (count (subtopics submap main-topic :proper false :direct false))
+;     (n-topics submap)))
 
+;rewritten
 (defn main-subtopics
   "Percent of nodes covered by the subhierarchy of the main topic."
-  [topic-map {:as submap :keys [main-topic]}]
-  {:pre [main-topic]}
-  (/ (count (subtopics submap main-topic :proper false :direct false))
-     (n-topics submap)))
+  ([topic-map]
+   (let [{:keys [main-topic]} topic-map]
+     {:value 0
+      :nsubt 0
+      :subt (set (subtopics topic-map main-topic :proper false :direct false))}))
+  ([topic-map submap feature new-topic]
+   {:pre [main-topic]}
+   (let [{:keys [subt nsubt]} feature
+         nsubt (cond-> nsubt (subt new-topic) inc)]
+   (assoc feature
+          :nsubt nsubt 
+          :value (/ nsubt (inc (n-topics submap)))))))
 
 (defn height
   "Computes the length of the longest path in the topic map."
@@ -302,28 +438,62 @@
     (if (empty? overlaps) 0
       (apply max overlaps))))
 
+;(defn avg-overlap
+;  "Average overlap between any two topics."
+;  [topic-map submap]
+;  (let [overlaps (for [parent (get-topics submap)
+;                       child (get-topics submap)
+;                       :let [child-docs (set (covered-docs submap [child]))
+;                             parent-docs (set (covered-docs submap [parent]))]
+;                       :when (and (seq child-docs) (seq parent-docs))]
+;                   (/ (count (set/intersection child-docs))
+;                      (count (set/union parent-docs))))]
+;    (if (empty? overlaps) 0
+;      (u/avg overlaps))))
+
+;rewritten
 (defn avg-overlap
   "Average overlap between any two topics."
-  [topic-map submap]
-  (let [overlaps (for [parent (get-topics submap)
-                       child (get-topics submap)
-                       :let [child-docs (set (covered-docs submap [child]))
-                             parent-docs (set (covered-docs submap [parent]))]
-                       :when (and (seq child-docs) (seq parent-docs))]
-                   (/ (count (set/intersection child-docs))
-                      (count (set/union parent-docs))))]
-    (if (empty? overlaps) 0
-      (u/avg overlaps))))
+  ([topic-map] {:value 0 :overlaps [] :doc-sets []})
+  ([topic-map submap feature new-topic]
+   (let [{:keys [overlaps doc-sets]} feature
+         new-topic-docs (set (covered-docs topic-map [new-topic]))
+         new-overlaps (for [docs doc-sets
+                            :when (and (seq docs) (seq new-topic-docs))]
+                        (/ (count (set/intersection docs new-topic-docs))
+                           (count (set/union docs new-topic-docs))))
+         overlaps (into overlaps new-overlaps)
+         doc-sets (conj doc-sets new-topic-docs)]
+     (assoc feature
+            :overlaps overlaps
+            :doc-sets doc-sets
+            :value (if (empty? overlaps) 0 (u/avg overlaps))))))
 
+;(defn max-overlap
+;  "Maximum overlap between any two topics." 
+;  [topic-map submap]
+;  (let [overlaps (for [parent (get-topics submap)
+;                       child (get-topics submap)
+;                       :let [child-docs (set (covered-docs submap [child]))
+;                             parent-docs (set (covered-docs submap [parent]))]
+;                       :when (and (seq child-docs) (seq parent-docs))]
+;                   (/ (count (set/intersection child-docs))
+;                      (count (set/union parent-docs))))]
+;    (if (empty? overlaps) 0
+;      (apply max overlaps))))
+  
+;rewritten
 (defn max-overlap
-  "Maximum overlap between any two topics." 
-  [topic-map submap]
-  (let [overlaps (for [parent (get-topics submap)
-                       child (get-topics submap)
-                       :let [child-docs (set (covered-docs submap [child]))
-                             parent-docs (set (covered-docs submap [parent]))]
-                       :when (and (seq child-docs) (seq parent-docs))]
-                   (/ (count (set/intersection child-docs))
-                      (count (set/union parent-docs))))]
-    (if (empty? overlaps) 0
-      (apply max overlaps))))
+  "Maximum overlap between any two topics."
+  ([topic-map] {:value 0 :doc-sets []})
+  ([topic-map submap feature new-topic]
+   (let [{:keys [value doc-sets]} feature
+         new-topic-docs (set (covered-docs topic-map [new-topic]))
+         new-overlaps (for [docs doc-sets
+                            :when (and (seq docs) (seq new-topic-docs))]
+                        (/ (count (set/intersection docs new-topic-docs))
+                           (count (set/union docs new-topic-docs))))
+         doc-sets (conj doc-sets new-topic-docs)]
+     (assoc feature
+            :doc-sets doc-sets
+            :value (apply max (conj new-overlaps value))))))

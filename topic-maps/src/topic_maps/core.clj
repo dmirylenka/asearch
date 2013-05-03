@@ -169,6 +169,9 @@
 (defn cache-merged [topic-map]
   (assoc topic-map :merged (merged-topic-doc-graph* topic-map)))
 
+(defn cache-topic-dist [topic-map]
+  (update-in topic-map [:topic-graph] g/cache-distances))
+
 (defn- merged-topic-doc-graph [topic-map]
   (or (:merged topic-map) (merged-topic-doc-graph* topic-map)))
 
