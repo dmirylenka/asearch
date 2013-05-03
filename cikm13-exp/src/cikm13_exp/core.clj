@@ -39,39 +39,76 @@
 
 (def queries ["dimensionality reduction" "fourier series" "anomaly detection" "statistical relational learning" "clustering methods" "latent dirichlet allocation" "neural networks" "quadratic programming" "numerical differential equations" "graph algorithms"])
 
-(declare ->TopicSubmap)
+;(defrecord TopicSubmap [topic-map topics]
+;  sl/IState
+;  (previous-state [this]
+;    (if (empty? topics)
+;      nil
+;      (TopicSubmap. topic-map (pop topics))))
+;  (state-name [this]
+;    (str (:title (:main-topic topic-map)) " : " (string/join ", " (map :title topics))))
+;  (next-actions [this]
+;    (remove (set topics) (g/get-nodes (:topic-graph topic-map))))
+;  (next-state [this topic]
+;    (TopicSubmap. topic-map (conj topics topic))))
 
-(extend-type Topic sl/IAction
-  (action-name [this] (:title this))
-  (-next-state [this state]
-    (let [{:keys [topic-map topics]} state]
-      (->TopicSubmap topic-map (conj topics this)))))
-
-(defrecord TopicSubmap [topic-map topics]
+(defrecord TopicSubmap [topic-map topics submap prev-state features feature-vals]
   sl/IState
   (previous-state [this]
-    (if (empty? topics)
-      nil
-      (->TopicSubmap topic-map (pop topics))))
+    prev-state)
   (state-name [this]
     (str (:title (:main-topic topic-map)) " : " (string/join ", " (map :title topics))))
   (next-actions [this]
-    (remove (set topics) (g/get-nodes (:topic-graph topic-map)))))
+    (remove (set topics) (tmaps/get-topics topic-map)))
+  (next-state [this topic]
+    (let [new-topics (conj topics topic)]
+          (TopicSubmap. topic-map
+                        new-topics 
+                        (tmaps/submap topic-map new-topics :keep [:main-topic])
+                        this
+                        features
+                        (sl/compute-features this topic))))
+  sl/IActionFeatures
+    (compute-features [this] feature-vals)
+    (compute-features [this new-topic]
+      (mapv #(%1 topic-map submap %2 new-topic) features feature-vals)))
 
-(defn empty-submap [topic-map]
-  (->TopicSubmap topic-map []))
+(extend-type Topic sl/IAction
+  (action-name [this] (:title this)))
 
-(defrecord Loss [loss-fn]
-  sl/ILoss
-  (compute-loss [this state1 state2]
+(defn empty-submap [topic-map features]
+  (let [submap (tmaps/submap topic-map [] :keep [:main-topic])]
+    (TopicSubmap. topic-map []
+                  submap 
+                  nil
+                  features
+                  (mapv #(%1 topic-map) features))))
+
+(defrecord StateLoss [loss-fn]
+  da/IStateLoss
+  (compute-state-loss [this state1 state2]
     (loss-fn state1 state2)))
 
-(def loss01 (Loss. #(if (= %1 %2) 0 1)))
+(defrecord ActionLoss [loss-fn]
+  da/IActionLoss
+  (compute-action-loss [this state action1 action2]
+    (loss-fn state action1 action2)))
 
-(def topic-overlap-loss
-  (Loss. #(let [topics1 (set (:topics %1)) topics2 (set (:topics %2))]
-            (- 1 (/ (count (set/intersection topics1 topics2))
-                    (count (set/union topics1 topics2)))))))
+(defrecord StateActionLoss [loss-fn]
+  da/IStateActionLoss
+  (compute-state-action-loss [this optimal-state given-state action]
+    (loss-fn optimal-state given-state action)))
+
+(defn zero-one [a b] (if (= a b) 0 1))
+
+(def action-loss-01 (ActionLoss. (fn [state action1 action2] (zero-one action1 action2))))
+
+(def state-loss-01 (StateLoss. (fn [state1 state2] (zero-one state1 state2))))
+
+;(def topic-overlap-loss
+;  (Loss. #(let [topics1 (set (:topics %1)) topics2 (set (:topics %2))]
+;            (- 1 (/ (count (set/intersection topics1 topics2))
+;                    (count (set/union topics1 topics2)))))))
 
 (defn match-score [topic-map optimal-topics predicted-topics]
   (let [topic-graph (:topic-graph topic-map)
@@ -96,56 +133,71 @@
         scores (iter '() optimal-topics predicted-topics)]
     (/ (u/avg scores) (+ 1 equality-bonus))))
 
+;(def smart-matching-loss 
+;  (StateLoss. (fn smart-matching-loss [optimal predicted]
+;           (let [topic-map (:topic-map optimal)
+;                 optimal-topics (:topics optimal)
+;                 predicted-topics (:topics predicted)]
+;             (- 1 (match-score topic-map optimal-topics predicted-topics))))))
+
 (def smart-matching-loss 
-  (Loss. (fn smart-matching-loss [optimal predicted]
-           (let [topic-map (:topic-map optimal)
-                 optimal-topics (:topics optimal)
-                 predicted-topics (:topics predicted)]
+  (StateActionLoss. (fn smart-matching-loss [optimal-state given-state action]
+           (let [topic-map (:topic-map optimal-state)
+                 optimal-topics (:topics optimal-state)
+                 predicted-topics (conj (:topics given-state) action)]
              (- 1 (match-score topic-map optimal-topics predicted-topics))))))
 
-(defrecord Features [feature-fns]
-  sl/IFeatures
-  (-features [this state]
-    (let [topic-map (:topic-map state)
-          submap (tmaps/submap topic-map (:topics state) :keep [:main-topic])]
-    (mapv #(% topic-map submap) feature-fns))))
+;(defrecord StateFeatures [feature-fns]
+;  sl/IFeatures
+;  (-features [this state]
+;    (let [topic-map (:topic-map state)
+;          submap (tmaps/submap topic-map (:topics state) :keep [:main-topic])]
+;    (mapv #(% topic-map submap) feature-fns))))
+
+;(defrecord IncrementalFeatures [feature-fns]
+;  sl/IActionFeatures
+;  (compute-features [this state action]
+;    (let [topic-map (:topic-map state)
+;          submap (tmaps/submap topic-map (:topics state) :keep [:main-topic])]
+;    (mapv #(% topic-map submap) feature-fns))))
 
 (def features
-  (Features. (vec (concat
-                    [ftr/n-links ; 1
-                     ftr/avg-pairwise-dist ; 2
-                     ftr/n-connected ; 3
-                     ftr/paper-coverage ; 4
-                     ftr/direct-doc-coverage ; 5
-                     ftr/unevenness ; 6
-                     ftr/avg-topic-freq ; 7
-                     ftr/min-topic-freq ; 8
-                     ftr/avg-cum-freq ; 9
-                     ftr/min-cum-freq ; 10 
-                     ftr/height ; 11
-                     ftr/partition-coef ; 12
-                     ftr/main-subtopics ; 13
-                     ftr/avg-pc-overlap ; 14
-                     ftr/max-pc-overlap ; 15
-                     ftr/avg-overlap ; 16
-                     ftr/max-overlap ; 17
-                     #(ftr/subtopic-coverage %1 %2 :direct true) ; 18
-                     #(ftr/avg-n-adj %1 %2 :mode :child) ; 19
-                     #(ftr/avg-n-adj %1 %2 :mode :parent) ; 20 
-                     #(ftr/max-n-adj %1 %2 :mode :parent)] ; 21
-                    )))) ; 25-28
+ ; (Features. (vec (concat
+                    [
+#_                   ftr/n-links ; 1
+                      ftr/avg-pairwise-dist ; 2
+                      ftr/n-connected ; 3
+                      ftr/paper-coverage ; 4
+                      ftr/direct-doc-coverage ; 5
+#_                    ftr/unevenness ; 6
+                      ftr/avg-topic-freq ; 7
+                      ftr/min-topic-freq ; 8
+                      ftr/avg-cum-freq ; 9
+                      ftr/min-cum-freq ; 10 
+#_                    ftr/height ; 11
+                      ftr/partition-coef ; 12
+                      ftr/main-subtopics ; 13
+#_                    ftr/avg-pc-overlap ; 14
+#_                    ftr/max-pc-overlap ; 15
+                      ftr/avg-overlap ; 16
+                      ftr/max-overlap ; 17
+#_                    #(ftr/subtopic-coverage %1 %2 :direct true) ; 18
+#_                    #(ftr/avg-n-adj %1 %2 :mode :child) ; 19
+#_                    #(ftr/avg-n-adj %1 %2 :mode :parent) ; 20 
+#_                    #(ftr/max-n-adj %1 %2 :mode :parent)] ; 21
+                    );))) ; 25-28
 
-(defn read-ground-truth [query]
-  (let [topic-map (tmaps/cache-merged (read-string (slurp (input-file-name query))))
+(defn read-ground-truth [query features]
+  (let [topic-map (->> (input-file-name query) slurp read-string tmaps/cache-merged tmaps/cache-topic-dist)
         {:keys [topic-graph]} topic-map
         topic-names (read-string (slurp (output-file-name query)))
         topic-name-map (u/key-map :title (g/get-nodes topic-graph))
         topic-by-name #(or (topic-name-map %) (throw (Exception. (str "No topic for name: " %))))
         topics (mapv topic-by-name topic-names)]
-    [(empty-submap topic-map) topics]))
+    [(empty-submap topic-map features) topics]))
 
-(defn state-action-seqs [queries]
-  (->> queries (map read-ground-truth)))
+(defn state-action-seqs [queries features]
+  (->> queries (map #(read-ground-truth % features))))
 
 (defn accuracy-at [true-seq predicted-seq]
   (/ (count (filter (set predicted-seq) true-seq))
@@ -158,8 +210,8 @@
 (defn match-score-at [topic-map optimal-seq predicted-seq]
  (mapv #(match-score topic-map (take % optimal-seq) (take % predicted-seq)) (range 1 (inc (count optimal-seq)))))
 
-(defn accuracies [model query]
-  (let [[init-state optimal-seq] (read-ground-truth query)
+(defn accuracies [model query features]
+  (let [[init-state optimal-seq] (read-ground-truth query features)
         n (count optimal-seq)
         topic-map (:topic-map init-state)
         predicted-seq (sl/best-action-seq model init-state n)]
@@ -170,23 +222,25 @@
     (tmaps/display-topics (tmaps/submap topic-map optimal-seq))
     (tmaps/display-topics (tmaps/submap topic-map predicted-seq))))
 
-(defn train-model [queries & {:as opt}]
-  (let [input-data (state-action-seqs queries)]
-    (sl/train-model input-data topic-overlap-loss features :c (:c opt))))
+;(defn train-model [queries & {:as opt}]
+;  (let [input-data (state-action-seqs queries)]
+;    (sl/train-model input-data topic-overlap-loss features :c (:c opt))))
 
-(defn train-dagger [queries seq-length n-iter & {:keys [evaluate]}]
-  (let [input-data (state-action-seqs queries)]
+(defn train-dagger [queries features seq-length n-iter & {:keys [evaluate]}]
+  (let [input-data (state-action-seqs queries features)]
     (da/dagger input-data seq-length
                #_ topic-overlap-loss
-                smart-matching-loss
-               features n-iter :evaluate evaluate)))
+               smart-matching-loss
+               action-loss-01
+               n-iter
+               :evaluate evaluate)))
 
-(defn leave-one-out [queries]
+(defn leave-one-out [queries features]
   (doseq [query queries]
-    (train-dagger (remove #{query} queries) 8 10 :evaluate #(accuracies % query))))
+    (train-dagger (remove #{query} queries) features 8 10 :evaluate #(accuracies % query features))))
 
-(defn predict-compare [model query n]
-  (let [[init-state optimal-seq] (read-ground-truth query)
+(defn predict-compare [model query features n]
+  (let [[init-state optimal-seq] (read-ground-truth query features)
         topic-map (:topic-map init-state)
         predicted-seq (sl/best-action-seq model init-state n)]
     (println "Optimal sequence:" (map :title optimal-seq))
