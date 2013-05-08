@@ -6,6 +6,7 @@
                  [unitn/utils "0.0.1"]
                  [unitn/mas-api "0.0.1"]
                  [unitn/topic-maps "0.0.1"]
+                 [unitn/scaiella12topical "0.0.1"]
                  [unitn/seq-learn "0.0.1"]]
   :main cikm13-exp.core
   :jvm-opts ["-Xmx2g" "-server"])

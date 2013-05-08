@@ -17,7 +17,8 @@
   (compute-features [this] [this action]))
 
 (defprotocol IModel
-  (best-action [this state]))
+  (best-action [this state])
+  (save-model [this file-name]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
@@ -45,7 +46,12 @@
           actions (next-actions state)
           ranking (mapv #(ActionRank. QID state % RANK) actions)
           ranking (svm-rank/predict-ranking svm-model ranking)]
-      (->> ranking (sort-by (comp - :rank)) first :action))))
+      (->> ranking (sort-by (comp - :rank)) first :action)))
+  (save-model [this file-name]
+    (svm-rank/save-model svm-model file-name))) 
+
+(defn load-model [file]
+  (SvmRankModel. (svm-rank/load-model file)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; API ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 

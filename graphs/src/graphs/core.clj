@@ -4,16 +4,19 @@
             [clojure.core [reducers :as r]]
             [utils [core :as u]]))
 
-(defprotocol IDigraphInternal
+(defprotocol IGraphInternal
   (get-nodes [this])
   (contains [this node])
-  (out-links [this node])
-  (in-links [this node])
+  (get-edges [this node])
   (-add-node [this node])
   (-remove-node [this node])
   (-add-link [this from to])
   (-remove-link [this from to])
-  (-subgraph [this nodes])
+  (-subgraph [this nodes]))
+
+(defprotocol IDigraphInternal
+  (out-links [this node])
+  (in-links [this node])
   (merge-reversed [this]))
 
 (defn- filter-links [link-map node-set]
@@ -24,12 +27,18 @@
 
 (defrecord Digraph [nodes in-map out-map] ;assumes nodes is a set
   IDigraphInternal
-    (get-nodes [this] nodes)
-    (contains [this node] (contains? nodes node))
     (out-links [this node]
       (out-map node))
     (in-links [this node]
       (in-map node))
+    (merge-reversed [this]
+      (let [link-map (merge-with into in-map out-map)]
+        (Digraph. nodes link-map link-map)))
+  IGraphInternal
+    (get-nodes [this] nodes)
+    (contains [this node] (contains? nodes node))
+    (get-edges [this node]
+      (set (concat (out-links this node) (in-links this node))))
     (-add-node [this new-node]
       (Digraph. (conj nodes new-node)
                 (assoc in-map new-node #{})
@@ -46,9 +55,6 @@
       (Digraph. nodes
                 (update-in in-map [to] disj from)
                 (update-in out-map [from] disj to)))
-    (merge-reversed [this]
-      (let [link-map (merge-with into in-map out-map)]
-        (Digraph. nodes link-map link-map)))
     (-subgraph [this nodes]
       (let [node-set (set nodes)]
         (Digraph. node-set (filter-links in-map node-set)
@@ -57,7 +63,43 @@
     (toString [this]
       (str "nodes " (.toString nodes) ", out-map " (.toString out-map))))
 
+(defrecord Graph [nodes adj-map] ;assumes nodes is a set
+  IDigraphInternal
+    (out-links [this node]
+      (adj-map node))
+    (in-links [this node]
+      (adj-map node))
+    (merge-reversed [this]
+      this)
+  IGraphInternal
+    (get-nodes [this] nodes)
+    (contains [this node] (contains? nodes node))
+    (get-edges [this node]
+      (adj-map node))
+    (-add-node [this new-node]
+      (Graph. (conj nodes new-node) (assoc adj-map new-node #{})))
+    (-remove-node [this node]
+      (Graph. (disj nodes node) (dissoc adj-map node)))
+    (-add-link [this from to]
+      (Graph. nodes
+              (-> adj-map
+                (update-in [to] conj from)
+                (update-in [from] conj to))))
+    (-remove-link [this from to]
+      (Graph. nodes
+              (-> adj-map
+                (update-in [to] disj from)
+                (update-in [from] disj to))))
+    (-subgraph [this nodes]
+      (let [node-set (set nodes)]
+        (Graph. node-set (filter-links adj-map node-set))))
+  Object
+    (toString [this]
+      (str "nodes " (.toString nodes) ", adj-map " (.toString adj-map))))
+
 (defn digraph [] (Digraph. #{} {} {}))
+
+(defn undigraph [] (Graph. #{} {}))
 
 (defn get-links [graph]
   (for [node (get-nodes graph)
@@ -89,8 +131,12 @@
   (contains? (out-links graph from) to))
 
 (defn add-link [graph from to]
-  (when-not (and (contains graph from) (contains graph to) (not (contains-link graph from to)))
-    (throw (Exception. "Adding link failed.")))
+  (when-not (contains graph from) 
+    (throw (Exception. (str "Adding link failed. Non-existing node: " from))))
+  (when-not (contains graph to) 
+    (throw (Exception. (str "Adding link failed. Non-existing node: " to))))
+  (when (contains-link graph from to)
+    (throw (Exception. (str "Adding link failed. Link already exists: " from "->" to))))
   (-add-link graph from to))
 
 (defn add-links [graph from-to-pairs]
@@ -140,6 +186,15 @@
 (defn wrap-node [obj id-fn title-fn]
   (GraphNode. obj id-fn title-fn))
 
+(defn diverse-colors [key-fn values]
+  (let [value->int (zipmap values (range))
+        color-fn (fn [x] (str (u/round x 3) " " ; note, these are HSV coordinates 
+                              (u/round (+ 0.75 (* 0.25 (- x 0.5))) 3) " "
+                              (u/round (+ 0.75 (* 0.25 (- x 0.5))) 3)))
+        norm #(/ % (dec (count values)) 1.0)]
+    (fn [node]
+      (-> node key-fn value->int norm color-fn))))
+
 (defn graph2dot
   ([graph & more]
     (let [opt (apply hash-map more)
@@ -148,10 +203,17 @@
           name-fn (or (:name-fn opt) node-title)
           font-fn (or (:font-fn opt) (constantly 10))
           relations (for [node nodes adj (out-links graph node)]
-                      (map id-fn [node adj]))]
-      (str "digraph G { rankdir=LR; nodesep=0.1;"
+                      (map id-fn [node adj]))
+          undirected (:undirected opt)
+          relations (if undirected (set (map set relations)) relations)
+          node-by-id (u/key-map id-fn nodes)
+          graph-spec (if undirected "graph" "digraph")
+          graph-op (if undirected " -- " " -> ")
+          weight (or (:weight opt) (constantly 1))
+          color-fn (or (:color opt) (constantly "#eeeeff"))]
+      (str graph-spec " G { rankdir=LR; nodesep=0.1; splines=true;"
            (->> relations
-             (map #(str "\"" (first %) "\"" " -> "  "\""(second %) "\" [arrowsize=0.25, color=grey]"))
+             (map #(str "\"" (first %) "\"" graph-op  "\""(second %) "\" [arrowsize=0.25, color=grey, weight=" (weight (map node-by-id %)) "]"))
              (string/join "; "))
            (if (seq relations) "; " "")
            (->> nodes
@@ -160,7 +222,7 @@
                         ", shape=box"
                         ", fontsize=" (font-fn %) ", margin=\"0.1,0.1\""
                         ", fontname=Arial"
-                        ", style=\"rounded,filled\", color=\"#eeeeff\""
+                        ", style=\"rounded,filled\", color=\"" (color-fn %) "\""
                         "]"))
              (string/join "; "))
            "}"))))

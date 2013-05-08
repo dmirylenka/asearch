@@ -8,7 +8,8 @@
             [topic-maps.features :as ftr]
             [graphs.core :as g]
             [seq-learn.core :as sl]
-            [seq-learn.dagger :as da])
+            [seq-learn.dagger :as da]
+            [scaiella12topical [core :as sca]])
   (:import [topic_maps.core Topic]))
 
 (defrecord Paper [title abstract]
@@ -271,4 +272,13 @@
     (tmaps/display-topics (tmaps/submap topic-map optimal-seq))
     (tmaps/display-topics (tmaps/submap topic-map predicted-seq))))
 
-(defn -main [])
+(defn build-sca-map [query]
+  (let [search (mas/search-papers query :end 100 :timeout 30000)
+        _ (when (u/fail? search) (throw (Exception. (str (:error search)))))
+        papers (map map->Paper (:value search))
+        topic-map (sca/build-topic-map papers)]
+    (tmaps/display-topics topic-map)))
+
+(defn -main []
+  (build-sca-map "statistical relational learning")
+  #_(build-sca-map "neural networks"))

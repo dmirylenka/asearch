@@ -7,4 +7,4 @@
  "relational database" ; "databases"
  "markov networks"
  "artificial intelligence applications" ; "data mining"
- ]
+]

@@ -2,6 +2,7 @@
   (:import [clojure.lang IPersistentMap])
   (:use [graphs.core :only [IGraphNode]])
   (:require [wminer-api.core :as wminer-api]
+            [tagme-api.core :as tagme]
             [wminer.core :as wminer]
             [utils [core :as u]
                    [text :as t]]
@@ -228,7 +229,7 @@
     (str (g/node-title topic) " (" (freqs topic) ")")))
 
 (defn display-graph [graph & more]
-  (dot/show-svg (dot/dot2svg (apply g/graph2dot graph more))))
+  (dot/show-svg (dot/dotstr2svg (apply g/graph2dot graph more) :dot)))
 
 (defn display-topics [topic-map]
   (let [freqs (cum-freqs topic-map)
