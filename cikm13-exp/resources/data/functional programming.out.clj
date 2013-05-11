@@ -1,10 +1,10 @@
 [
- "functional programming"
- "programming language"
- "theory of computation"
- "type theory"
- "graph theory"
- "formal methods"
- "programming paradigms"
- "formal verification"
+ "Functional programming"
+ "Programming language"
+ "Theory of computation"
+ "Type theory"
+ "Graph theory"
+ "Formal methods"
+ "Programming paradigms"
+ "Formal verification"
  ]

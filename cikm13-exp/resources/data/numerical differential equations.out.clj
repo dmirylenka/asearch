@@ -1,10 +1,10 @@
 [
- "numerical differential equations"
- "differential equations"
- "partial differential equations"
- "ordinary differential equations"
- "boundary value problem"
- "numerical partial differential equations"
- "numerical methods for ordinary differential equations"
- "numerical integration"
+ "Numerical differential equations"
+ "Numerical analysis"
+ "Partial differential equations"
+ "Ordinary differential equations"
+ "Numerical partial differential equations"
+ "Boundary value problem"
+ "Numerical methods for ordinary differential equations"
+ "Numerical integration"
  ]

@@ -8,14 +8,23 @@
   "The list of english stop words."
   (delay (set (line-seq (io/reader (io/file "./resources/stoplist.txt"))))))
 
+(defn string->tokens
+  "Turns a string of text into a sequence of lower-case tokens.
+   Splitting is not lazy, lowercasing is."
+  [s]
+  (let [result (->> (string/split s #"[^\p{L}\d-]+")
+                 (map string/lower-case)
+                 (remove string/blank?))]
+    (when (empty? result)
+      (println (str "Tokenless string: " s)))
+    result))
+
 (defn string->words
   "Turns a string of text into a sequence of lowercase words.
    Splitting is not lazy, lowercasing is."
   [s]
-#_  {:pre [(string? s)]}
-  (let [result (->> (string/split s #"[^\p{L}\d-]+")
-		(map string/lower-case)
-		(filter #(re-matches #"^\p{L}.*$" %)))]
+  (let [result (->> (string->tokens s)
+                 (filter #(re-matches #"^\p{L}.*$" %)))]
     (when (empty? result)
       (println (str "Wordless string: " s)))
     result))

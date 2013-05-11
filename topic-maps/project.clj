@@ -8,6 +8,7 @@
                  [mysql/mysql-connector-java "5.1.6"]
                  [unitn/utils "0.0.1"]
                  [unitn/wminer-api "0.0.1"]
+                 [unitn/wiki-api "0.0.1"]
                  [unitn/wminer "0.0.1"]
                  [unitn/wikidb "0.0.1"]
                  [unitn/graphs "0.0.1"]

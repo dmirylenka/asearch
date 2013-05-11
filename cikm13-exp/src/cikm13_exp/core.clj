@@ -6,15 +6,21 @@
             [mas-api.core :as mas]
             [topic-maps.core :as tmaps]
             [topic-maps.features :as ftr]
+            [wiki-api.core :as wapi]
             [graphs.core :as g]
             [seq-learn.core :as sl]
-            [seq-learn.dagger :as da])
+            [seq-learn.dagger :as da]
+            [scaiella12topical [core :as sca]])
   (:import [topic_maps.core Topic]))
 
 (defrecord Paper [title abstract]
+  wapi/IDocument
+    (doc-string [this] (str (:title this) ". " (:abstract this))))
+
+(extend-type Paper
   tmaps/IDocument
-    (doc-id [this] (str title " " (:year this) " " (doall (string/join ", " (map :last-name (:author this))))))
-    (doc-string [this] (str title ". " abstract)))
+    (doc-id [this] (str (:title this)" " (:year this) " " (doall (string/join ", " (map :last-name (:author this))))))
+    (doc-string [this] (str (:title this) ". " (:abstract this))))
 
 (def input-data-dir "./resources/data/")
 
@@ -75,6 +81,10 @@
 
 (extend-type Topic sl/IAction
   (action-name [this] (:title this)))
+
+(extend-type wiki_api.core.Article
+  sl/IAction
+  (action-name [this] (wapi/article-title this)))
 
 (defn empty-submap [topic-map features]
   (let [submap (tmaps/submap topic-map [] :keep [:main-topic])]
@@ -164,28 +174,28 @@
 (def features
  ; (Features. (vec (concat
                     [
-#_                   ftr/n-links ; 1
-                      ftr/avg-pairwise-dist ; 2
-                      ftr/n-connected ; 3
-                      ftr/paper-coverage ; 4
-                      ftr/direct-doc-coverage ; 5
-#_                    ftr/unevenness ; 6
-                      ftr/avg-topic-freq ; 7
-                      ftr/min-topic-freq ; 8
-                      ftr/avg-cum-freq ; 9
-                      ftr/min-cum-freq ; 10 
-#_                    ftr/height ; 11
-                      ftr/partition-coef ; 12
-                      ftr/main-subtopics ; 13
-#_                    ftr/avg-pc-overlap ; 14
-#_                    ftr/max-pc-overlap ; 15
-                      ftr/avg-overlap ; 16
-                      ftr/max-overlap ; 17
-#_                    #(ftr/subtopic-coverage %1 %2 :direct true) ; 18
-#_                    #(ftr/avg-n-adj %1 %2 :mode :child) ; 19
-#_                    #(ftr/avg-n-adj %1 %2 :mode :parent) ; 20 
-#_                    #(ftr/max-n-adj %1 %2 :mode :parent)] ; 21
-                    );))) ; 25-28
+#_                   ftr/n-links 
+                      ftr/avg-pairwise-dist ; 1
+                      ftr/n-connected ; 2
+                      ftr/paper-coverage ; 3
+                      ftr/direct-doc-coverage ; 4
+#_                    ftr/unevenness ; 
+                      ftr/avg-topic-freq ; 5
+                      ftr/min-topic-freq ; 6
+                      ftr/avg-cum-freq ; 7
+                      ftr/min-cum-freq ; 8 
+#_                    ftr/height ;  
+                      ftr/partition-coef ; 9 
+                      ftr/main-subtopics ; 10 
+#_                    ftr/avg-pc-overlap ;   
+#_                    ftr/max-pc-overlap ;   
+                      ftr/avg-overlap ; 11 
+                      ftr/max-overlap ; 12 
+#_                    #(ftr/subtopic-coverage %1 %2 :direct true) ;
+#_                    #(ftr/avg-n-adj %1 %2 :mode :child) ; 
+#_                    #(ftr/avg-n-adj %1 %2 :mode :parent) ; 
+#_                    #(ftr/max-n-adj %1 %2 :mode :parent)] ;
+                    );))) 
 
 (defn read-ground-truth [query features]
   (let [topic-map (->> (input-file-name query) slurp read-string tmaps/cache-merged tmaps/cache-topic-dist)
@@ -235,9 +245,9 @@
                n-iter
                :evaluate evaluate)))
 
-(defn leave-one-out [queries features]
+(defn leave-one-out [queries features ntopics niter]
   (doseq [query queries]
-    (train-dagger (remove #{query} queries) features 8 10 :evaluate #(accuracies % query features))))
+    (train-dagger (remove #{query} queries) features ntopics niter :evaluate #(accuracies % query features))))
 
 (defn predict-compare [model query features n]
   (let [[init-state optimal-seq] (read-ground-truth query features)
@@ -249,8 +259,8 @@
  #_ (tmaps/display-topics (tmaps/submap topic-map optimal-seq))
  #_ (tmaps/display-topics (tmaps/submap topic-map predicted-seq))))
 
-(defn assess-baseline [query]
-  (let [[init-state optimal-seq] (read-ground-truth query)
+(defn assess-baseline [query features]
+  (let [[init-state optimal-seq] (read-ground-truth query features)
         topic-map (:topic-map init-state)
         n (count optimal-seq)
         all-topics (tmaps/get-topics topic-map)
@@ -271,4 +281,16 @@
     (tmaps/display-topics (tmaps/submap topic-map optimal-seq))
     (tmaps/display-topics (tmaps/submap topic-map predicted-seq))))
 
-(defn -main [])
+(defn build-sca-map [query & more]
+  (let [search (mas/search-papers query :end 100 :timeout 30000)
+        _ (when (u/fail? search) (throw (Exception. (str (:error search)))))
+        papers (map map->Paper (:value search))
+        topic-map (apply sca/build-topic-map papers more)]
+    (tmaps/display-topics topic-map)))
+
+(defn assess-sca [])
+
+(defn -main []
+  #_(build-sca-map "graph algorithms")
+  (build-sca-map "statistical relational learning" :nmerge 0)
+  #_(build-sca-map "neural networks"))

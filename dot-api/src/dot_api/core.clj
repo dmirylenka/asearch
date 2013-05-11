@@ -2,11 +2,12 @@
   (:require [clojure [string :as string]])
   (:use [clojure.java.shell :only [sh]]))
 
-(defn dot2svg [dotstring]
-  (:out (sh "dot" "-Tsvg" :in dotstring)))
+(def avail-algos
+  #{:dot :neato :twopi :circo :fdp :sfdp})
 
-(defn twopi2svg [dotstring]
-  (:out (sh "dot" "-Tsvg" :in dotstring)))
+(defn dotstr2svg [dotstring algo]
+  {:pre [(avail-algos algo)]}
+  (:out (sh (name algo) "-Tsvg" :in dotstring)))
 
 (defn show-svg [svg]
   (let [file (java.io.File/createTempFile "smth" ".svg")]

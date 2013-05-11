@@ -1,10 +1,10 @@
 [
- "cluster analysis" 
- "data clustering algorithms"
- "hierarchical clustering"
- "information retrieval"
- "classification algorithms"
- "fuzzy clustering"
- "mathematical optimization"
- "gene expression"
+ "Cluster analysis" 
+ "Data clustering algorithms"
+ "Hierarchical clustering"
+ "Information retrieval"
+ "Classification algorithms"
+ "Fuzzy clustering"
+ "Mathematical optimization"
+ "Gene expression"
  ]

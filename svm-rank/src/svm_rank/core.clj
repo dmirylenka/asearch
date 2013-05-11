@@ -15,7 +15,8 @@
   (output-info [this]))
 
 (defprotocol IModel
-  (predict-ranking [this rankings]))
+  (predict-ranking [this rankings])
+  (save-model [this file-name]))
 
 (def output-features* (memoize #'output-features))
 
@@ -64,7 +65,12 @@
           input-file (write-file! rankings input-file)
           output-file (run-svm-predict! input-file output-file model-file)
           rank-values (->> output-file slurp (#(string/split % #"\n")) (map #(Double/parseDouble %)))]
-      (mapv assoc-value rankings rank-values))))
+      (mapv assoc-value rankings rank-values)))
+  (save-model [this file-name]
+    (io/copy (io/file model-file) (io/file file-name))))
+
+(defn load-model [file]
+  (Model. (io/file file)))
 
 (defn train-model [ranking & {:as opt}]
   (let [input-file (or (io/file (:input-file opt)) (temp-file "train"))

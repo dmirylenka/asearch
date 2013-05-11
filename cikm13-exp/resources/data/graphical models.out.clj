@@ -1,10 +1,10 @@
 [
- "graphical models"
- "computer vision"
- "digital image"
- "image segmentation"
- "machine learning"
- "markov random field"
- "probability theory"
- "edge detection"
+ "Graphical models"
+ "Computer vision"
+ "Digital image"
+ "Image segmentation"
+ "Machine learning"
+ "Markov random field"
+ "Probability theory"
+ "Edge detection"
  ]
