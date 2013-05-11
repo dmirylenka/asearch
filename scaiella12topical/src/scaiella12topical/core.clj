@@ -4,6 +4,8 @@
             [utils.core :as u]
             [topic-maps.core :as tmaps]
             [graphs.core :as g]
+            [wiki-api.core :as wapi]
+            [wminer-api.core :as wminer]
             [tagme-api.core :as tagme]
             [dot-api.core :as dot]
             [clatrix.core :as m]
@@ -22,64 +24,78 @@
 (defn mk-category [topic-info]
   (tmaps/map->Topic (assoc topic-info :kind ::tmaps/category)))
 
-(defrecord DocArticleLink [doc article spot rho])
+(extend-type wiki_api.core.IArticle
+  g/IGraphNode
+  (node-id [this] (wapi/article-id this))
+  (node-title [this] (wapi/article-title this)))
 
-(defrecord DocArticleMap [doc-map topic-map doc-topic-links])
+;(defrecord DocArticleLink [doc article spot rho])
+
+(defn norm
+  [category-name]
+  (-> category-name
+   #_ (string/trim)
+   #_  string/lower-case
+    (string/replace #"\s+" "_")
+   #_  string/capitalize))
+
+(defn unnorm
+  [category-name]
+  (-> category-name 
+  #_ (string/trim)
+  #_ string/lower-case
+    (string/replace #"_" " ")
+    (string/replace #"\s+" " ")))
+
+(defn article-categories [page]
+  (map unnorm (wikidb/page-cats (norm page))))
+
+(defn cat-relations [cats]
+  (map #(map unnorm %) (wikidb/cat-relations (map norm cats))))
+
+;(defrecord DocArticleMap [doc-map topic-map doc-topic-links])
 
 (defn map-to-articles [docs]
   (let [mk-distinct-docs #(->> % (group-by tmaps/doc-id) vals (map first))
-        docs (mk-distinct-docs docs)
-        article->topic #(mk-article (select-keys % [:id :title]))]
-    (for [doc docs
-          article (tagme/tagme-annotate-one (tmaps/doc-string doc))]
-      (DocArticleLink. doc (article->topic article)
-                       (:spot article) (:rho article)))))
-
-(defn select-max-rho [links]
-  (let [sort-fn #(sort-by (comp - :rho) %)]
-    (->> links
-      (group-by (juxt (comp :id :article) (comp :id :doc)))
-      (u/map-val sort-fn)
-      (u/map-val first)
-      vals)))
+        docs (mk-distinct-docs docs)]
+    (apply wapi/annotate tagme/service docs)))
 
 (defn remove-frequent-articles [max-freq links]
-  (let [doc-id (comp :id :doc)
-        total-docs (count (distinct (map doc-id links)))
+  (let [total-docs (count (distinct (map wapi/link-doc links)))
         max-count (* total-docs max-freq)
-        count-docs #(count (distinct (map doc-id %)))
+        count-docs #(count (distinct (map wapi/link-doc %)))
         counts (->> links
-                 (group-by :article)
+                 (group-by wapi/link-article)
                  (u/map-val count-docs))]
-    (remove #(>= (counts (:article %)) max-count) links)))
+    (remove #(>= (counts (wapi/link-article %)) max-count) links)))
 
 (defn select-significant [links]
-  (let [all-articles (set (map :article links))
+  (let [all-articles (set (map wapi/link-article links))
         greedily-iterate
           (fn greedily-iterate [articles-selected links-left articles-left]
             (if (empty? links-left) 
               articles-selected
               (let [volume-map (->> links-left
-                             (filter (comp articles-left :article))
-                             (group-by :article)
-                             (u/map-val #(apply + (map :rho %))))
+                             (filter (comp articles-left wapi/link-article))
+                             (group-by wapi/link-article)
+                             (u/map-val #(apply + (map wapi/link-strength %))))
                     volume #(get volume-map % 0)
                     next-article (apply max-key volume articles-left)
                     new-covered-volume (->> links-left
-                                         (filter #(= next-article (:article %)))
-                                         (map (juxt :doc :rho))
+                                         (filter #(= next-article (wapi/link-article %)))
+                                         (map (juxt wapi/link-doc wapi/link-strength))
                                          (into {}))
                     covered-volume #(get new-covered-volume % 0)
                     deduct-covered-volume (fn [links]
                                             (for [link links
-                                                  :let [new-rho (- (:rho link) (covered-volume (:doc link)))]
+                                                  :let [new-rho (- (wapi/link-strength link) (covered-volume (wapi/link-doc link)))]
                                                   :when (> new-rho 0)]
-                                              (assoc link :rho new-rho)))]
+                                              (assoc (wapi/map->DocArticleLink link) :strength new-rho)))]
                 (recur (conj articles-selected next-article)
                        (deduct-covered-volume links-left)
                        (disj articles-left next-article)))))
         sign-articles (set (greedily-iterate [] links all-articles))]
-    (filter (comp sign-articles :article) links)))
+    (filter (comp sign-articles wapi/link-article) links)))
 
 (defn- weight-matrix [articles rel-weights epsilon]
   (m/matrix (for [a1 articles]
@@ -87,8 +103,13 @@
                 (if (= a1 a2) 0 
                   (+ (get rel-weights #{a1 a2} epsilon)))))))
 
+(defn m+ [arg & args]
+  (if (empty? args)
+    arg
+    (apply m/+ arg args)))
+
 (defn- degree-matrix [W] ; laplacian
-  (->> W m/rows (apply m/+) m/dense first m/diag))
+  (->> W m/rows (apply m+) m/dense first m/diag))
 
 (defn- regularize [M alpha]
   (m/+ (m/diag (repeat (m/ncols M) alpha)) M))
@@ -122,29 +143,27 @@
 
 (defrecord Cluster [items eigen-values eigen-vectors])
 
-(defn- mk-cluster [items rel-weights epsilon]
-  (let [{:keys [values vectors]} (spectral-view items rel-weights epsilon)]
+(defn- mk-cluster [items rel-weights epsilon min-cluster-size]
+  (let [{:keys [values vectors]}
+        (if (> (count items) min-cluster-size)
+          (spectral-view items rel-weights epsilon)
+          nil)]
     (Cluster. items values vectors)))
 
 (defn- split-sparsest [clusters rel-weights epsilon min-cluster-size]
-  (let [;spectral-views (mapv #(spectral-vew % rel-weights epsilon) clusters)
-        ;denseness (->> % (get spectral-views) :values second)
-        denseness #(second (:eigen-values %))
-        ;sparsest-idx (apply min-key denseness (range (count clusters)))
-        ;sparsest-cluster (get clusters sparsest-idx)
+  (let [denseness #(second (:eigen-values %))
         sparsest-cluster (apply min-key denseness clusters)
         second-evector (second (m/dense (m/t (:eigen-vectors sparsest-cluster))))
         cluster-items (:items sparsest-cluster)
         point-evector (map vector cluster-items second-evector)
         sorted-points (map first (sort-by second point-evector))
         cut-fn #(normalized-cut (split-at % sorted-points) rel-weights epsilon)
-        ;best-cut (apply min-key cut-fn (range min-cluster-size (inc (- (count cluster-items) min-cluster-size))))
         best-cut (apply min-key cut-fn (range 1 (count cluster-items)))
-        mk-cluster* #(mk-cluster % rel-weights epsilon)
+        mk-cluster* #(mk-cluster % rel-weights epsilon min-cluster-size)
         subclusters (map mk-cluster* (split-at best-cut sorted-points))]
     [sparsest-cluster subclusters]))
 
-(defn- display-clusters [clusters rel-weights ]
+(defn- display-clusters [clusters rel-weights]
   (let [all-nodes (apply concat clusters)
         relations (keys rel-weights)
         graph (-> (g/undigraph)
@@ -161,18 +180,12 @@
       dot/show-svg)))
 
 (defn topic-clusters [min-cluster-size max-n-clusters links]
-  (let [articles (vec (distinct (map :article links)))
-        article-ids (map :id articles)
-        article-map (u/key-map :id articles) 
-        id-pairs (for [id1 article-ids
-                       id2 article-ids
-                       :when (> id2 id1)]
-                   [id1 id2])
-        rel-scores (tagme/relatedness id-pairs)
-        rel-weights (into {} (for [[[id1 id2] score] rel-scores]
-                              [#{(article-map id1) (article-map id2)} score]))
+  (let [articles (vec (distinct (map wapi/link-article links)))
+        article-pairs (for [a1 articles a2 articles :let [pair [a1 a2]] :when (apply < (map wapi/article-id pair))] pair)
+        rel-scores (apply wapi/relatedness tagme/service article-pairs)
+        rel-weights (into {} (map (juxt wapi/rel-articles wapi/rel-strength) rel-scores))
         epsilon (compute-epsilon rel-weights)
-        big? #(>= (count (:items %)) (* 2 min-cluster-size))
+        ;big? #(>= (count (:items %)) (* 2 min-cluster-size))
         big? #(> (count (:items %))  min-cluster-size)
         mk-clustering #(map :items %) 
         iterate-split-sparsest
@@ -185,55 +198,62 @@
               (let [[sparsest subclusters] (split-sparsest big-clusters rel-weights epsilon min-cluster-size)
                     small-clusters (-> small-clusters (into (remove big? subclusters)))
                     big-clusters (-> big-clusters (disj sparsest) (into (filter big? subclusters)))]
-                (display-clusters (mk-clustering (into big-clusters small-clusters)) rel-weights)
+              ;  (display-clusters (mk-clustering (into big-clusters small-clusters)) rel-weights)
                 (recur small-clusters big-clusters))))
-        init-clustering #{(mk-cluster articles rel-weights epsilon)}]
+        init-clustering #{(mk-cluster articles rel-weights epsilon min-cluster-size)}]
     (iterate-split-sparsest #{} init-clustering)))
 
 (defn label-cluster [articles links]
   (let [articles (set articles)]
     (->> links
-      (filter (comp articles :article))
-      (group-by :article)
-      (u/map-val #(apply + (map :rho %)))
+      (filter (comp articles wapi/link-article))
+      (group-by wapi/link-article)
+      (u/map-val #(apply + (map wapi/link-strength %)))
       (apply max-key second)
       first)))
 
 (defn- build-topic-rels [articles]
-  (let [topic-map (u/key-map :title articles)
+  (let [topic-map (u/key-map wapi/article-title articles)
         mk-topic #(or (topic-map %)
                       (tmaps/->Topic ::tmaps/category %))
         article-titles (set (keys topic-map))
-        article-cats (u/val-map tmaps/article-categories article-titles)
+        article-cats (u/val-map article-categories article-titles)
+        _ (println "articles with no categories:" (filter (comp empty? second) article-cats))
         cat-art-rels (for [[article categories] article-cats
-                           category categories
-                           :when (not= article category)]
+                           category categories]
                        [category article])
         all-titles (distinct (apply concat cat-art-rels))
-        cat-rels (map reverse (tmaps/cat-relations all-titles))]
+        cat-rels (map reverse (cat-relations all-titles))
+        _ (println "cat-rels:" cat-rels)]
     (->> cat-art-rels
       (concat cat-rels)
       distinct
       (map (partial map mk-topic)))))
 
-(defn build-topic-map [docs]
+(defn build-topic-map [docs & {:as opt}]
   (sql/with-connection conf/wiki-db
     (let [distinct-docs #(->> % (group-by tmaps/doc-id) vals (map first))
           docs (distinct-docs docs)
           links (->> docs
                   map-to-articles
-                  select-max-rho
+                  wapi/select-max-strength
                   select-significant)
-          clusters (topic-clusters 3 12 links)
+          cluster-size (or (:cluster-size opt) 3)
+          nclusters (or (:nclusters opt) 8)
+          nmerge (or (:nmerge opt) 4)
+          clusters (topic-clusters cluster-size (dec (+ nclusters nmerge)) links)
+          [clusters other] (split-at (dec nclusters) (sort-by (comp - count) clusters))
+          clusters (cond-> clusters
+                           (seq other) (conj (apply concat other)))
           doc-ids (map tmaps/doc-id docs)
           topic-doc-id-map (->> links
-                          (group-by :article)
-                          (u/map-val #(map (comp tmaps/doc-id :doc) %)))
+                          (group-by wapi/link-article)
+                          (u/map-val #(map (comp tmaps/doc-id wapi/link-doc) %)))
           topic-doc-links (for [cluster clusters
                                 :let [article (label-cluster cluster links)]
                                 doc (set (mapcat topic-doc-id-map cluster))]
                             [article doc])
-          articles (distinct (map :article links))
+          articles (distinct (map wapi/link-article links))
           topic-links (build-topic-rels articles)
           all-topics (distinct (apply concat topic-links))
           topic-graph (-> (g/digraph)
@@ -247,8 +267,11 @@
           topic-map (-> topic-map
                       tmaps/merge-similar
                       (update-in [:topic-graph] g/break-loops)
-                      tmaps/remove-orphan-topics)
-          _ (tmaps/display-topics topic-map)
+                      tmaps/remove-orphan-topics
+                      (u/assocf tmaps/main-topic identity :main-topic)
+                      tmaps/expand-main-topic)
+          ;_ (println (g/get-nodes (:topic-graph topic-map)))
+          ;_ (tmaps/display-topics topic-map)
           {:keys [topic-graph topic-docs]} topic-map
           topics-with-docs (->> (g/get-nodes topic-graph)
                              (remove (comp empty? (partial g/out-links topic-docs))))

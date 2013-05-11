@@ -5,6 +5,7 @@
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [unitn/utils "0.0.1"]
                  [unitn/mas-api "0.0.1"]
+                 [unitn/wiki-api "0.0.1"]
                  [unitn/topic-maps "0.0.1"]
                  [unitn/scaiella12topical "0.0.1"]
                  [unitn/seq-learn "0.0.1"]]

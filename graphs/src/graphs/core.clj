@@ -132,11 +132,11 @@
 
 (defn add-link [graph from to]
   (when-not (contains graph from) 
-    (throw (Exception. (str "Adding link failed. Non-existing node: " from))))
+    (throw (Exception. (str "Adding link failed. Non-existing node: " (pr-str from)))))
   (when-not (contains graph to) 
-    (throw (Exception. (str "Adding link failed. Non-existing node: " to))))
+    (throw (Exception. (str "Adding link failed. Non-existing node: " (pr-str to)))))
   (when (contains-link graph from to)
-    (throw (Exception. (str "Adding link failed. Link already exists: " from "->" to))))
+    (throw (Exception. (str "Adding link failed. Link already exists: " (pr-str from) "->" (pr-str to)))))
   (-add-link graph from to))
 
 (defn add-links [graph from-to-pairs]
@@ -339,7 +339,7 @@
 (defn replace-node [graph old-node new-node]
   (when-not (and (contains graph old-node)
                  #_(not (contains graph new-node)))
-    (throw (Exception. (pr-str "Replacing node failed: " old-node " -> " new-node))))
+    (throw (Exception. (pr-str "Replacing node failed: " (pr-str old-node) " -> " (pr-str new-node)))))
   (let [outs (out-links graph old-node)
         ins (in-links graph old-node)
         links-to-add (concat (map #(vector new-node %) outs)

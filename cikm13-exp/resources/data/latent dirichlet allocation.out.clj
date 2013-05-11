@@ -1,10 +1,10 @@
 [
- "latent dirichlet allocation"
- "statistical natural language processing"
- "topic model"
- "gibbs sampling"
- "variational bayesian methods"
- "graphical models"
- "latent semantic indexing"
- "generative model"
+ "Latent Dirichlet allocation"
+ "Statistical natural language processing"
+ "Topic model"
+ "Gibbs sampling"
+ "Variational Bayesian methods"
+ "Graphical models"
+ "Latent semantic indexing"
+ "Generative model"
  ]

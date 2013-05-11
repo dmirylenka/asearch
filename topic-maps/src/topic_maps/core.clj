@@ -4,6 +4,7 @@
   (:require [wminer-api.core :as wminer-api]
             [tagme-api.core :as tagme]
             [wminer.core :as wminer]
+            [wiki-api.core :as wapi]
             [utils [core :as u]
                    [text :as t]]
             [wikidb [core :as wikidb]
@@ -11,7 +12,8 @@
             [graphs.core :as g]
             [dot-api.core :as dot]
             [clojure.java [jdbc :as sql]]
-            [clojure [set :as set]]))
+            [clojure [set :as set]
+                     [string :as string]]))
 
 ;;;;;;;;;;;;;;;;;;;;;; Data types and all possible ways to instantiate them ;;;;;;;;;;;;;;;;;;;;;;; 
 
@@ -29,6 +31,15 @@
     (doc-id [this] (get-id-fn this))
     (doc-string [this] (string-fn this)))
 
+(extend-type topic_maps.core.IDocument
+  wapi/IDocument
+  (doc-string [this] (doc-string this)))
+
+(extend-type wiki_api.core.IArticle
+  g/IGraphNode
+  (node-id [this] (wapi/article-id this))
+  (node-title [this] (wapi/article-title this)))
+
 (defn wrap-doc [obj get-id-fn string-fn]
   (Document. obj get-id-fn string-fn))
 
@@ -36,7 +47,10 @@
   IGraphNode
     (node-id [this]
       (str kind " " title))
-    (node-title [this] title))
+    (node-title [this] title)
+  wapi/IArticle
+    (article-title [this] title)
+    (article-id [this] (g/node-id this)))
 
 (defn mk-article [title]
   (Topic. ::article title))
@@ -66,9 +80,21 @@
 
 ;;;;;;;;;;;;;;;;;;;;;; Helper functions for working with wikipedia database ;;;;;;;;;;;;;;;;;;;;;;; 
 
-(def norm wikidb/wiki-normalize)
+(defn norm
+  [category-name]
+  (-> category-name
+   #_ (string/trim)
+   #_  string/lower-case
+    (string/replace #"\s+" "_")
+   #_  string/capitalize))
 
-(def unnorm wikidb/wiki-unnormalize)
+(defn unnorm
+  [category-name]
+  (-> category-name 
+  #_ (string/trim)
+  #_ string/lower-case
+    (string/replace #"_" " ")
+    (string/replace #"\s+" " ")))
 
 (defn article-categories [page]
   (map unnorm (wikidb/page-cats (norm page))))
@@ -76,6 +102,15 @@
 (defn cat-relations [cats]
   (map #(map unnorm %) (wikidb/cat-relations (map norm cats))))
 
+;(def norm wikidb/wiki-normalize)
+;
+;(def unnorm wikidb/wiki-unnormalize)
+;
+;(defn article-categories [page]
+;  (map unnorm (wikidb/page-cats (norm page))))
+;
+;(defn cat-relations [cats]
+;  (map #(map unnorm %) (wikidb/cat-relations (map norm cats))))
 
 ;;;;;;;;;;;;;;;;;;;;;; Building the topic map and related algorithms ;;;;;;;;;;;;;;;;;;;;;;; 
 
@@ -83,28 +118,27 @@
   (sql/with-connection conf/wiki-db
     (let [distinct-docs #(->> % (group-by doc-id) vals (map first))
           docs (distinct-docs docs)
-          article-sets (wminer-api/wiki-articles (map doc-string docs))
+          ;article-sets (wminer-api/wiki-articles (map doc-string docs))
+          annotations (wapi/select-max-strength (apply wapi/annotate tagme/service docs))
           doc-ids (map doc-id docs)
-          doc-articles (map vector doc-ids article-sets)
-          articles (set (apply concat article-sets))
-          article-cats (u/val-map article-categories articles)
+          articles (set (map wapi/link-article annotations))
+          article-map (u/key-map wapi/article-title articles)
+          article-titles (keys article-map)
+          article-cats (u/val-map article-categories article-titles)
           cats (set (apply concat (vals article-cats)))
           cat-rels (map reverse (cat-relations cats))
-          article-topics (map mk-article articles)
           category-topics (map mk-category cats)
-          topics (concat article-topics category-topics)
+          topics (concat articles category-topics)
           topic-links (concat (map (partial map mk-category) cat-rels)
-                             (for [[article cats] article-cats
-                                   cat cats]
-                               [(mk-category cat) (mk-article article)]))
+                              (for [[article cats] article-cats
+                                    cat cats]
+                                [(mk-category cat) (article-map article)]))
           topic-graph (-> (g/digraph)
                         (g/add-nodes topics)
                         (g/add-links topic-links))
-          topic-doc-links (for [[doc articles] doc-articles
-                               article articles]
-                           [(mk-article article) doc])
+          topic-doc-links (map (juxt wapi/link-article (comp doc-id wapi/link-doc)) annotations)
           topic-docs (-> (g/digraph)
-                      (g/add-nodes article-topics)
+                      (g/add-nodes articles)
                       (g/add-nodes doc-ids)
                       (g/add-links topic-doc-links))]
       (TopicMap. topic-graph topic-docs (zipmap doc-ids docs)))))
@@ -116,7 +150,7 @@
   (-> topic-map
     (update-in [:topic-graph] g/merge-nodes topic-keep topic-remove)
     (#(cond-> %
-      (g/contains (:topic-graph %) topic-remove)
+      (g/contains (:topic-docs %) topic-remove)
       (update-in [:topic-docs] g/replace-node topic-remove topic-keep)))
     (update-in [:merged-topics topic-keep] #(if (nil? %) #{topic-remove} (conj % topic-remove)))))
 
@@ -124,13 +158,13 @@
   "Merges child-parent topics whose titles are equal up to stemming, e.g. 'compilers' -> 'compiler'"
   [topic-map]
   (let [{:keys [topic-graph topic-docs]} topic-map
-        stem-title (comp t/stem t/string->words :title)
+        stem-title (comp t/stem t/string->tokens wapi/article-title)
         similar-titles? #(= (stem-title %1) (stem-title %2))
         pairs-to-merge (for [parent (g/get-nodes topic-graph)
                              child (g/out-links topic-graph parent)
                              :when (similar-titles? parent child)]
                            [parent child])]
-    #_(println "Topics to merge:" pairs-to-merge)
+   (println "Topics to merge:" pairs-to-merge)
     (reduce (partial apply merge-topics) topic-map pairs-to-merge)))
 
 (defn remove-orphan-topics
@@ -142,7 +176,8 @@
         no-docs? #(empty? (g/out-links topic-docs %))
         topics-no-docs (set (filter no-docs? all-topics))
         children-empty? #(every? topics-no-docs (g/out-links topic-graph %))
-        topics-to-remove (filter children-empty? topics-no-docs)]
+        topics-to-remove (filter children-empty? topics-no-docs)
+        ]
     (-> topic-map
       (update-in [:topic-graph] g/remove-nodes-safe topics-to-remove)
       (update-in [:topic-docs] g/remove-nodes-safe topics-to-remove))))
@@ -157,8 +192,8 @@
   (let [{:keys [topic-graph topic-docs main-topic]} topic-map
         topics (g/get-nodes topic-graph)
         ancestorz (set (g/reachable topic-graph [main-topic] :direction :backward))
-        wiki-out-links (map mk-article (wminer/topic-out-links (:title main-topic)))
-        out-link-topics (set/intersection (set wiki-out-links) (set topics))
+        wiki-out-link-titles (set (wminer/topic-out-links (wapi/article-title main-topic)))
+        out-link-topics (filter (comp wiki-out-link-titles wapi/article-title) topics)
         new-out-links (->> out-link-topics
                         (remove ancestorz)
                         (map #(vector main-topic %)))]

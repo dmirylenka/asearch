@@ -1,10 +1,10 @@
 [
- "fourier analysis"
- "time series analysis"
- "convergence of fourier series"
- "functional analysis"
- "laplace transform"
- "numerical analysis"
- "mathematical analysis"
- "complex analysis"
+ "Fourier series"
+ "Time series analysis"
+ "Convergence of Fourier series"
+ "Functional analysis"
+ "Laplace transform"
+ "Numerical analysis"
+ "Mathematical analysis"
+ "Complex analysis"
  ]

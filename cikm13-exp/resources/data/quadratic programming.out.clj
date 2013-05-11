@@ -1,10 +1,10 @@
 [
- "quadratic programming"
- "mathematical optimization"
- "sequential quadratic programming"
- "interior point method"
- "positive-definite matrix"
- "linear programming"
- "classification algorithms"
- "linear algebra"
+ "Quadratic programming"
+ "Mathematical optimization"
+ "Sequential quadratic programming"
+ "Interior point method"
+ "Positive-definite matrix"
+ "Linear programming"
+ "Classification algorithms"
+ "Linear algebra"
  ]
