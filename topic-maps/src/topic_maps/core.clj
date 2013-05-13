@@ -13,7 +13,7 @@
             [dot-api.core :as dot]
             [clojure.java [jdbc :as sql]]
             [clojure [set :as set]
-                     [string :as string]]))
+            [string :as string]]))
 
 ;;;;;;;;;;;;;;;;;;;;;; Data types and all possible ways to instantiate them ;;;;;;;;;;;;;;;;;;;;;;; 
 
@@ -164,7 +164,7 @@
                              child (g/out-links topic-graph parent)
                              :when (similar-titles? parent child)]
                            [parent child])]
-   (println "Topics to merge:" pairs-to-merge)
+  ; (println "Topics to merge:" pairs-to-merge)
     (reduce (partial apply merge-topics) topic-map pairs-to-merge)))
 
 (defn remove-orphan-topics

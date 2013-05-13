@@ -281,14 +281,51 @@
     (tmaps/display-topics (tmaps/submap topic-map optimal-seq))
     (tmaps/display-topics (tmaps/submap topic-map predicted-seq))))
 
+(defrecord ScaResult [query optimal topics nclusters nmerge accuracy match-score])
+
+(defrecord BestResults [best-accuracy best-match])
+
+(defn assess-sca [queries features nclusters]
+  (let [optimal-seq (memoize (fn [query] (second (read-ground-truth query features))))
+        single-result (fn [query nmerge k]
+                        (let [search (mas/search-papers query :end 100 :timeout 30000)
+                              _ (when (u/fail? search) (throw (Exception. (str (:error search)))))
+                              papers (map map->Paper (:value search))
+                              topic-map (sca/build-topic-map papers :nmerge nmerge :nclusters k)
+                              predicted-topics (tmaps/get-topics topic-map)
+                              optimal-topics (take k (optimal-seq query))
+                              accuracy (accuracy-at (map :title optimal-topics) (map :title predicted-topics))]
+                          (doto (ScaResult. query optimal-topics predicted-topics k nmerge accuracy nil) println)))
+        avg-results (fn [queries nmerge k]
+                      (let [results (doall (for [query queries]
+                                      (single-result query nmerge k)))
+                            avg-accuracy (u/avg (mapv :accuracy results))
+                           ; avg-match-score (u/avg (mapv :match-score results))
+                            ]
+                        (ScaResult. nil nil nil k nmerge avg-accuracy nil #_ avg-match-score)))
+        best-results (doall (for [k (rest (range (inc nclusters)))]
+                       (let [results (for [nmerge (range 6)]
+                                       (avg-results queries nmerge k))
+                             best-acc (apply max-key :accuracy results)
+                             best-match nil; (apply max-key :match-score results)
+                             ]
+                         (BestResults. best-acc best-match))))]
+   (println "Best by accuracy:") 
+   (println "Accuracies: " (mapv (comp :accuracy :best-accuracy) best-results))
+   (println "Match-score: " (mapv (comp :match-score :best-accuracy) best-results))
+   (println "Params: " (mapv (comp :nmerge :best-accuracy) best-results))
+;  (println "Best by match-score") 
+;  (println "Accuracies: " (mapv (comp :accuracy :best-match) best-results))
+;  (println "Match-score: " (mapv (comp :match-score :best-match) best-results))
+;  (println "Params: " (mapv (comp :nmerge :best-match) best-results))
+))
+
 (defn build-sca-map [query & more]
   (let [search (mas/search-papers query :end 100 :timeout 30000)
         _ (when (u/fail? search) (throw (Exception. (str (:error search)))))
         papers (map map->Paper (:value search))
         topic-map (apply sca/build-topic-map papers more)]
     (tmaps/display-topics topic-map)))
-
-(defn assess-sca [])
 
 (defn -main []
   #_(build-sca-map "graph algorithms")
