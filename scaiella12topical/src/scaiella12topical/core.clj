@@ -143,14 +143,14 @@
 
 (defrecord Cluster [items eigen-values eigen-vectors])
 
-(defn- mk-cluster [items rel-weights epsilon min-cluster-size]
+(defn- mk-cluster [items rel-weights epsilon big?]
   (let [{:keys [values vectors]}
-        (if (> (count items) min-cluster-size)
+        (if (big? items)
           (spectral-view items rel-weights epsilon)
           nil)]
     (Cluster. items values vectors)))
 
-(defn- split-sparsest [clusters rel-weights epsilon min-cluster-size]
+(defn- split-sparsest [clusters rel-weights epsilon big?]
   (let [denseness #(second (:eigen-values %))
         sparsest-cluster (apply min-key denseness clusters)
         second-evector (second (m/dense (m/t (:eigen-vectors sparsest-cluster))))
@@ -159,7 +159,7 @@
         sorted-points (map first (sort-by second point-evector))
         cut-fn #(normalized-cut (split-at % sorted-points) rel-weights epsilon)
         best-cut (apply min-key cut-fn (range 1 (count cluster-items)))
-        mk-cluster* #(mk-cluster % rel-weights epsilon min-cluster-size)
+        mk-cluster* #(mk-cluster % rel-weights epsilon big?)
         subclusters (map mk-cluster* (split-at best-cut sorted-points))]
     [sparsest-cluster subclusters]))
 
@@ -181,12 +181,16 @@
 
 (defn topic-clusters [min-cluster-size max-n-clusters links]
   (let [articles (vec (distinct (map wapi/link-article links)))
+        article-docs (u/group-map wapi/link-article wapi/link-doc links)
         article-pairs (for [a1 articles a2 articles :let [pair [a1 a2]] :when (apply < (map wapi/article-id pair))] pair)
         rel-scores (apply wapi/relatedness tagme/service article-pairs)
         rel-weights (into {} (map (juxt wapi/rel-articles wapi/rel-strength) rel-scores))
         epsilon (compute-epsilon rel-weights)
         ;big? #(>= (count (:items %)) (* 2 min-cluster-size))
-        big? #(> (count (:items %))  min-cluster-size)
+        count-docs (fn [items] (count (distinct (mapcat article-docs items))))
+        big? #(and (> (count-docs %)  min-cluster-size)
+                   (> (count %) 1))
+        big-cluster? (comp big? :items)
         mk-clustering #(map :items %) 
         iterate-split-sparsest
           (fn [small-clusters big-clusters]
@@ -195,12 +199,12 @@
                            (count small-clusters))
                         max-n-clusters))
               (mk-clustering (into big-clusters small-clusters))
-              (let [[sparsest subclusters] (split-sparsest big-clusters rel-weights epsilon min-cluster-size)
-                    small-clusters (-> small-clusters (into (remove big? subclusters)))
-                    big-clusters (-> big-clusters (disj sparsest) (into (filter big? subclusters)))]
-              ;  (display-clusters (mk-clustering (into big-clusters small-clusters)) rel-weights)
+              (let [[sparsest subclusters] (split-sparsest big-clusters rel-weights epsilon big?)
+                    small-clusters (-> small-clusters (into (remove big-cluster? subclusters)))
+                    big-clusters (-> big-clusters (disj sparsest) (into (filter big-cluster? subclusters)))]
+        ;        (display-clusters (mk-clustering (into big-clusters small-clusters)) rel-weights)
                 (recur small-clusters big-clusters))))
-        init-clustering #{(mk-cluster articles rel-weights epsilon min-cluster-size)}]
+        init-clustering #{(mk-cluster articles rel-weights epsilon big?)}]
     (iterate-split-sparsest #{} init-clustering)))
 
 (defn label-cluster [articles links]
@@ -214,21 +218,21 @@
 
 (defn- build-topic-rels [articles]
   (let [topic-map (u/key-map wapi/article-title articles)
-        mk-topic #(or (topic-map %)
-                      (tmaps/->Topic ::tmaps/category %))
+        mk-article #(topic-map %)
+        mk-category #(tmaps/->Topic ::tmaps/category %)
         article-titles (set (keys topic-map))
         article-cats (u/val-map article-categories article-titles)
-        _ (println "articles with no categories:" (filter (comp empty? second) article-cats))
+        ;_ (println "articles with no categories:" (filter (comp empty? second) article-cats))
         cat-art-rels (for [[article categories] article-cats
                            category categories]
                        [category article])
         all-titles (distinct (apply concat cat-art-rels))
-        cat-rels (map reverse (cat-relations all-titles))
-        _ (println "cat-rels:" cat-rels)]
-    (->> cat-art-rels
+        cat-rels (map (partial map mk-category) (map reverse (cat-relations all-titles)))
+        ;_ (println "cat-rels:" cat-rels)
+        ]
+    (->> (map (fn [[cat art]] [(mk-category cat) (mk-article art)]) cat-art-rels)
       (concat cat-rels)
-      distinct
-      (map (partial map mk-topic)))))
+      distinct)))
 
 (defn build-topic-map [docs & {:as opt}]
   (sql/with-connection conf/wiki-db
