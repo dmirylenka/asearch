@@ -1,7 +1,6 @@
 (ns graphs.core
   (:require [clojure [string :as string]
                      [set :as set]]
-            [clojure.core [reducers :as r]]
             [utils [core :as u]]))
 
 (defprotocol IGraphInternal
@@ -21,8 +20,8 @@
 
 (defn- filter-links [link-map node-set]
   (->> link-map
-    (r/filter (fn [[k v]] (contains? node-set k)))
-    (r/map (fn [[k v]] [k (set/intersection node-set v)]))
+    (filter (fn [[k v]] (contains? node-set k)))
+    (map (fn [[k v]] [k (set/intersection node-set v)]))
     (into {})))
 
 (defrecord Digraph [nodes in-map out-map] ;assumes nodes is a set

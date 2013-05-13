@@ -245,6 +245,10 @@
                n-iter
                :evaluate evaluate)))
 
+(defn run-fold [queries features ntopics niter fold]
+  (let [query (get queries fold)]
+    (train-dagger (remove #{query} queries) features ntopics niter :evaluate #(accuracies % query features))))
+
 (defn leave-one-out [queries features ntopics niter]
   (doseq [query queries]
     (train-dagger (remove #{query} queries) features ntopics niter :evaluate #(accuracies % query features))))
@@ -327,7 +331,10 @@
         topic-map (apply sca/build-topic-map papers more)]
     (tmaps/display-topics topic-map)))
 
-(defn -main []
+(defn -main [arg & more]
+  (let [fold (Integer/parseInt arg)]
+    (run-fold queries features 8 10 fold))
+  #_(leave-one-out queries features 8 10)
   #_(build-sca-map "graph algorithms")
-  (build-sca-map "statistical relational learning" :nmerge 0)
+  #_(build-sca-map "statistical relational learning" :nmerge 0)
   #_(build-sca-map "neural networks"))

@@ -11,7 +11,7 @@
                  [unitn/wiki-api "0.0.1"]
                  [unitn/wminer "0.0.1"]
                  [unitn/wikidb "0.0.1"]
+                 [unitn/tagme-api "0.0.1"]
                  [unitn/graphs "0.0.1"]
-                 [unitn/dot-api "0.0.1"]
-                 [unitn/cluster "0.0.1"]]
+                 [unitn/dot-api "0.0.1"]]
   :main topic-maps.learn)
