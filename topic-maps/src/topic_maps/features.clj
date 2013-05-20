@@ -30,7 +30,6 @@
       (mapcat (partial g/out-links topic-docs))
       distinct)))
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Features of the topic-maps ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;(defn paper-coverage

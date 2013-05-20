@@ -202,7 +202,7 @@
               (let [[sparsest subclusters] (split-sparsest big-clusters rel-weights epsilon big?)
                     small-clusters (-> small-clusters (into (remove big-cluster? subclusters)))
                     big-clusters (-> big-clusters (disj sparsest) (into (filter big-cluster? subclusters)))]
-        ;        (display-clusters (mk-clustering (into big-clusters small-clusters)) rel-weights)
+                ;(display-clusters (mk-clustering (into big-clusters small-clusters)) rel-weights)
                 (recur small-clusters big-clusters))))
         init-clustering #{(mk-cluster articles rel-weights epsilon big?)}]
     (iterate-split-sparsest #{} init-clustering)))
@@ -234,27 +234,19 @@
       (concat cat-rels)
       distinct)))
 
-(defn build-topic-map [docs & {:as opt}]
+(defn build-topic-map* [{:keys [docs links cluster-size nclusters nmerge]}]
   (sql/with-connection conf/wiki-db
-    (let [distinct-docs #(->> % (group-by tmaps/doc-id) vals (map first))
-          docs (distinct-docs docs)
-          links (->> docs
-                  map-to-articles
-                  wapi/select-max-strength
-                  select-significant)
-          cluster-size (or (:cluster-size opt) 3)
-          nclusters (or (:nclusters opt) 8)
-          nmerge (or (:nmerge opt) 4)
-          clusters (topic-clusters cluster-size (dec (+ nclusters nmerge)) links)
+    (let [clusters (topic-clusters cluster-size (dec (+ nclusters nmerge)) links)
           [clusters other] (split-at (dec nclusters) (sort-by (comp - count) clusters))
           clusters (cond-> clusters
                            (seq other) (conj (apply concat other)))
           doc-ids (map tmaps/doc-id docs)
           topic-doc-id-map (->> links
-                          (group-by wapi/link-article)
-                          (u/map-val #(map (comp tmaps/doc-id wapi/link-doc) %)))
+                             (group-by wapi/link-article)
+                             (u/map-val #(map (comp tmaps/doc-id wapi/link-doc) %)))
           topic-doc-links (for [cluster clusters
-                                :let [article (label-cluster cluster links)]
+                                :let [article (label-cluster cluster links)
+                                      #_ (println (:title article) "=" (map :title cluster))]
                                 doc (set (mapcat topic-doc-id-map cluster))]
                             [article doc])
           articles (distinct (map wapi/link-article links))
@@ -264,9 +256,9 @@
                         (g/add-nodes all-topics)
                         (g/add-links topic-links))
           topic-docs (-> (g/digraph)
-                      (g/add-nodes all-topics)
-                      (g/add-nodes doc-ids)
-                      (g/add-links topic-doc-links))
+                       (g/add-nodes all-topics)
+                       (g/add-nodes doc-ids)
+                       (g/add-links topic-doc-links))
           topic-map (tmaps/->TopicMap topic-graph topic-docs (zipmap doc-ids docs))
           topic-map (-> topic-map
                       tmaps/merge-similar
@@ -278,7 +270,22 @@
           ;_ (tmaps/display-topics topic-map)
           {:keys [topic-graph topic-docs]} topic-map
           topics-with-docs (->> (g/get-nodes topic-graph)
-                             (remove (comp empty? (partial g/out-links topic-docs))))
-          ]
-      (tmaps/submap topic-map topics-with-docs))))
-    ; (remove-frequent-articles 0.5)
+                             (remove (comp empty? (partial g/out-links topic-docs))))]
+    (tmaps/submap topic-map topics-with-docs))))
+
+(defn prepare-params [docs & {:as opt}]
+  (let [distinct-docs #(->> % (group-by tmaps/doc-id) vals (map first))
+        docs (distinct-docs docs)]
+    {:docs docs
+     :links (->> docs
+                map-to-articles
+                wapi/select-max-strength
+                select-significant)
+     :cluster-size (or (:cluster-size opt) 5)
+     :nclusters (or (:nclusters opt) 8)
+     :nmerge (or (:nmerge opt) 4)}))
+
+(defn build-topic-map [docs & more]
+  (build-topic-map* (apply prepare-params docs more)))
+
+; (remove-frequent-articles 0.5)
