@@ -2,10 +2,12 @@
   (:import [org.wikipedia.miner.util WikipediaConfiguration]
            [org.wikipedia.miner.model Wikipedia Article Category Page Page$PageType]
            [org.wikipedia.miner.annotation Disambiguator TopicDetector Topic]
-           [org.wikipedia.miner.annotation.weighting LinkDetector])
+           [org.wikipedia.miner.annotation.weighting LinkDetector]
+           [org.wikipedia.miner.comparison ArticleComparer])
   (:require (clojure.java [io :as io])
             (utils [core :as u]
                    [text :as t])
+            (wiki-api [core :as wapi])
             (clojure [string :as string])))
 
 (def resources
@@ -14,16 +16,24 @@
           wikipedia (Wikipedia. wiki-conf false)
           disambiguator (Disambiguator. wikipedia)
           topic-detector (TopicDetector. wikipedia disambiguator true false)
-          link-detector (LinkDetector. wikipedia)]
+          link-detector (LinkDetector. wikipedia)
+          art-comparer (ArticleComparer. wikipedia)]
       {:wikipedia wikipedia
        :topic-detector topic-detector
-       :link-detector link-detector})))
+       :link-detector link-detector
+       :art-comparer art-comparer})))
+
+(defn ^Wikipedia wikipedia []
+  (@resources :wikipedia))
 
 (defn ^TopicDetector topic-detector []
   (@resources :topic-detector))
 
 (defn ^LinkDetector link-detector []
   (@resources :link-detector))
+
+(defn ^ArticleComparer art-comparer []
+  (@resources :art-comparer))
 
 (defn get-wiki-topics
   "Returns a collection of wikiminer Topics detected in a string."
@@ -74,3 +84,52 @@
     (if article
       (->> article .getLinksOut (map (memfn getTitle)) #_(map string/lower-case))
       (throw (Exception. (str "Could not find neither article nor category with the main article:" topic-title))))))
+
+;(defn get-wiki-topics
+;  "Returns a collection of wikiminer Topics detected in a string."
+;  [^String string & [probability]]
+;  (let [all-topics (.getTopics (topic-detector) string nil)]
+;    (if-not probability
+;      all-topics
+;      (.getBestTopics (link-detector) all-topics probability))))
+
+(extend-protocol wapi/IArticle
+  Article
+    (article-title [this]
+      (.getTitle this))
+    (article-id [this]
+      (.getId this)))
+
+(extend-protocol wapi/ICategory
+  Category
+    (category-title [this]
+      (.getTitle this))
+    (category-id [this]
+      (.getId this)))
+
+(deftype WikiService []
+  wapi/IWikiService
+  (-annotate [this docs]
+    (for [doc docs 
+          :let [docstr (wapi/doc-string doc)]
+          topic (get-wiki-topics docstr 1e-4)
+          position (.getPositions topic)]
+      (wapi/->DocArticleLink doc topic
+                             (.substring docstr (.getStart position) (.getEnd position))
+                             (.getWeight topic))))
+  (-relatedness [this article-pairs]
+    (for [[a1 a2] article-pairs
+          :let [score (.getRelatedness (art-comparer) a1 a2)]]
+      (wapi/->ArticleRel #{a1 a2} score)))
+  (-article-categories [this article]
+    (.getParentCategories (.getPageById (wikipedia) (wapi/article-id article))))
+  (-cat-relations [this categories]
+    (let [wiki (wikipedia)
+          cat-by-id (u/key-map wapi/category-id categories)
+          original-cat (comp cat-by-id wapi/category-id)
+          parent-cats #(.getParentCategories (.getPageById wiki (wapi/category-id %)))]
+      (for [cat categories
+            parent (keep original-cat (parent-cats cat))] 
+        [cat parent]))))
+
+(def service (WikiService.))

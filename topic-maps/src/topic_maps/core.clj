@@ -119,7 +119,7 @@
     (let [distinct-docs #(->> % (group-by doc-id) vals (map first))
           docs (distinct-docs docs)
           ;article-sets (wminer-api/wiki-articles (map doc-string docs))
-          annotations (wapi/select-max-strength (apply wapi/annotate tagme/service docs))
+          annotations (wapi/select-max-strength (apply wapi/annotate wminer/service docs))
           doc-ids (map doc-id docs)
           articles (set (map wapi/link-article annotations))
           article-map (u/key-map wapi/article-title articles)

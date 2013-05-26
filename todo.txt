@@ -1,0 +1,13 @@
+
+TODO TRIP:
+   slg poster
+   slg spotlight presentation
+   presentation for ian
+   ideas for the internship 
+   scienscan tool
+      implement structured output into the tool 
+      make scienscan opensource
+         move away from wikidb 
+            (to wikipedia miner)
+         make it configurable
+         make it extendible
