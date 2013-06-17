@@ -35,6 +35,18 @@
 (defn ^ArticleComparer art-comparer []
   (@resources :art-comparer))
 
+(defn ->wapi-article [^Article article]
+  (wapi/->Article (.getId article) (.getTitle article)))
+
+(defn ^Article ->wminer-article [article]
+  (.getPageById (wikipedia) (:id article)))
+
+(defn ->wapi-category [^Category category]
+  (wapi/->Category (.getId category) (.getTitle category)))
+
+(defn ^Category ->wminer-category [category]
+  (.getPageById (wikipedia) (:id category)))
+
 (defn get-wiki-topics
   "Returns a collection of wikiminer Topics detected in a string."
   [^String string & [probability]]
@@ -85,28 +97,6 @@
       (->> article .getLinksOut (map (memfn getTitle)) #_(map string/lower-case))
       (throw (Exception. (str "Could not find neither article nor category with the main article:" topic-title))))))
 
-;(defn get-wiki-topics
-;  "Returns a collection of wikiminer Topics detected in a string."
-;  [^String string & [probability]]
-;  (let [all-topics (.getTopics (topic-detector) string nil)]
-;    (if-not probability
-;      all-topics
-;      (.getBestTopics (link-detector) all-topics probability))))
-
-(extend-protocol wapi/IArticle
-  Article
-    (article-title [this]
-      (.getTitle this))
-    (article-id [this]
-      (.getId this)))
-
-(extend-protocol wapi/ICategory
-  Category
-    (category-title [this]
-      (.getTitle this))
-    (category-id [this]
-      (.getId this)))
-
 (deftype WikiService []
   wapi/IWikiService
   (-annotate [this docs]
@@ -114,22 +104,23 @@
           :let [docstr (wapi/doc-string doc)]
           topic (get-wiki-topics docstr 1e-4)
           position (.getPositions topic)]
-      (wapi/->DocArticleLink doc topic
+      (wapi/->DocArticleLink doc (->wapi-article topic)
                              (.substring docstr (.getStart position) (.getEnd position))
                              (.getWeight topic))))
   (-relatedness [this article-pairs]
     (for [[a1 a2] article-pairs
-          :let [score (.getRelatedness (art-comparer) a1 a2)]]
+          :let [wminer-a1 (->wminer-article a1)
+                wminer-a2 (->wminer-article a2)
+                score (.getRelatedness (art-comparer) wminer-a1 wminer-a2)]]
       (wapi/->ArticleRel #{a1 a2} score)))
   (-article-categories [this article]
-    (.getParentCategories (.getPageById (wikipedia) (wapi/article-id article))))
+    (map ->wapi-category (.getParentCategories (->wminer-article article))))
   (-cat-relations [this categories]
     (let [wiki (wikipedia)
-          cat-by-id (u/key-map wapi/category-id categories)
-          original-cat (comp cat-by-id wapi/category-id)
-          parent-cats #(.getParentCategories (.getPageById wiki (wapi/category-id %)))]
+          categories (set categories)
+          parent-cats #(map ->wapi-category (.getParentCategories (->wminer-category %)))]
       (for [cat categories
-            parent (keep original-cat (parent-cats cat))] 
+            parent (filter categories (parent-cats cat))] 
         [cat parent]))))
 
 (def service (WikiService.))

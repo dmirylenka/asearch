@@ -1,7 +1,7 @@
 (ns wiki-api.core
   (:require [utils.core :as u]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Protocols that MUST be implemented by Wikipedia service wrappers ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Protocols and data types that MUST be used by Wikipedia service wrappers ;;;;;;;;;;;;;;;;
 
 (defprotocol IDocument
   (doc-string [this]))
@@ -10,23 +10,29 @@
   String
   (doc-string [this] this))
 
-(defprotocol IArticle
-  (article-title [this])
-  (article-id [this]))
+;(defprotocol IArticle
+;  (article-title [this])
+;  (article-id [this]))
+;
+;(defprotocol ICategory
+;  (category-title [this])
+;  (category-id [this]))
 
-(defprotocol ICategory
-  (category-title [this])
-  (category-id [this]))
+(defrecord Article [id title]
+ ;IArticle
+ ;(article-title [this] title)
+ ;(article-id [this] id)
+  )
 
-(defprotocol IDocArticleLink
-  (link-doc [this])
-  (link-article [this])
-  (link-fragment [this])
-  (link-strength [this]))
+(defrecord Category [id title]
+ ;ICategory 
+ ;(category-title [this] title)
+ ;(category-id [this] id)
+  )
 
-(defprotocol IArticleRel
-  (rel-articles [this])
-  (rel-strength [this]))
+(defrecord DocArticleLink [doc article fragment strength])
+
+(defrecord ArticleRel [articles strength])
 
 (defprotocol IWikiService
   (-annotate [this docs])
@@ -45,36 +51,12 @@
 (defn cat-relations [service & categories]
   (-cat-relations service categories))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Records that MAY be used by Wikipedia service wrappers ;;;;;;;;;;;;;;;;
-
-(defrecord Article [id title]
-  IArticle
-  (article-title [this] title)
-  (article-id [this] id))
-
-(defrecord Category [id title]
-  ICategory 
-  (category-title [this] title)
-  (category-id [this] id))
-
-(defrecord DocArticleLink [doc article fragment strength]
-  IDocArticleLink
-  (link-doc [this] doc)
-  (link-article [this] article)
-  (link-fragment [this] fragment)
-  (link-strength [this] strength))
-
-(defrecord ArticleRel [articles strength]
-  IArticleRel
-  (rel-articles [this] articles)
-  (rel-strength [this] strength))
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Utility functions ;;;;;;;;;;;;;;;;
 
 (defn select-max-strength [links]
-  (let [sort-fn #(sort-by (comp - link-strength) %)]
+  (let [sort-fn #(sort-by (comp - :strength) %)]
     (->> links
-      (group-by (juxt link-article link-doc))
+      (group-by (juxt :article :doc))
       (u/map-val sort-fn)
       (u/map-val first)
       vals)))

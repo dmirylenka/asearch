@@ -45,19 +45,6 @@
 
 (def queries ["dimensionality reduction" "fourier series" "anomaly detection" "statistical relational learning" "clustering methods" "latent dirichlet allocation" "neural networks" "quadratic programming" "numerical differential equations" "graph algorithms"])
 
-;(defrecord TopicSubmap [topic-map topics]
-;  sl/IState
-;  (previous-state [this]
-;    (if (empty? topics)
-;      nil
-;      (TopicSubmap. topic-map (pop topics))))
-;  (state-name [this]
-;    (str (:title (:main-topic topic-map)) " : " (string/join ", " (map :title topics))))
-;  (next-actions [this]
-;    (remove (set topics) (g/get-nodes (:topic-graph topic-map))))
-;  (next-state [this topic]
-;    (TopicSubmap. topic-map (conj topics topic))))
-
 (defrecord TopicSubmap [topic-map topics submap prev-state features feature-vals]
   sl/IState
   (previous-state [this]
@@ -114,11 +101,6 @@
 (def action-loss-01 (ActionLoss. (fn [state action1 action2] (zero-one action1 action2))))
 
 (def state-loss-01 (StateLoss. (fn [state1 state2] (zero-one state1 state2))))
-
-;(def topic-overlap-loss
-;  (Loss. #(let [topics1 (set (:topics %1)) topics2 (set (:topics %2))]
-;            (- 1 (/ (count (set/intersection topics1 topics2))
-;                    (count (set/union topics1 topics2)))))))
 
 (defn match-score [topic-map optimal-topics predicted-topics]
   (let [topic-graph (:topic-graph topic-map)
@@ -198,20 +180,6 @@
                  optimal-topics (:topics optimal-state)
                  predicted-topics (conj (:topics given-state) action)]
              (- 1 (match-score topic-map optimal-topics predicted-topics))))))
-
-;(defrecord StateFeatures [feature-fns]
-;  sl/IFeatures
-;  (-features [this state]
-;    (let [topic-map (:topic-map state)
-;          submap (tmaps/submap topic-map (:topics state) :keep [:main-topic])]
-;    (mapv #(% topic-map submap) feature-fns))))
-
-;(defrecord IncrementalFeatures [feature-fns]
-;  sl/IActionFeatures
-;  (compute-features [this state action]
-;    (let [topic-map (:topic-map state)
-;          submap (tmaps/submap topic-map (:topics state) :keep [:main-topic])]
-;    (mapv #(% topic-map submap) feature-fns))))
 
 (def features
  ; (Features. (vec (concat
