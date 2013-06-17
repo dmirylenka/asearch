@@ -14,4 +14,4 @@
                  [unitn/tagme-api "0.0.1"]
                  [unitn/graphs "0.0.1"]
                  [unitn/dot-api "0.0.1"]]
-  :main topic-maps.learn)
+  :main topic-maps.core)

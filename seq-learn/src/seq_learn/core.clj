@@ -64,9 +64,6 @@
                    (recur (next-state state action) (conj actions action)))))]
     (iter state [])))
 
-;(defn compute-state-seq [state action-seq]
-;  (butlast (reductions #(next-state %2 %1) state action-seq)))
-
 (defn- produce-ranking [transition-loss-seq]
   (let [id-transition-loss-seq (map vector (partition-by first transition-loss-seq) (rest (range)))]
     (vec (for [[state-action-loss-seq qid] id-transition-loss-seq
