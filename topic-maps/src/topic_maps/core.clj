@@ -217,7 +217,6 @@
                              child (g/out-links topic-graph parent)
                              :when (similar-titles? parent child)]
                            [parent child])]
-  ; (println "Topics to merge:" pairs-to-merge)
     (reduce (partial apply merge-topics) topic-map pairs-to-merge)))
 
 (defn remove-orphan-topics
@@ -282,7 +281,6 @@
         topic-doc-nodes (distinct (concat doc-nodes doc-containing-topics))
         new-topic-docs (g/subgraph subgraph topic-doc-nodes)
         between-topic-links (->> (g/get-links new-topic-docs)
-                              ;(filter #(instance? Topic (second %)))
                               (remove (comp doc-nodes second)))
         new-topic-docs (g/remove-links new-topic-docs between-topic-links)
         in-topic-docs (set (mapcat #(g/out-links new-topic-docs %) doc-containing-topics))
@@ -323,16 +321,18 @@
   (fn [topic]
     (str (g/node-title topic) " (" (freqs topic) ")")))
 
-(defn display-graph [graph & more]
-  (dot/show-svg (dot/dotstr2svg (apply g/graph2dot graph more) :dot)))
+(defn graph2svg [graph & more]
+  (dot/dotstr2svg (apply g/graph2dot graph more) :dot))
 
-(defn display-topics [topic-map]
+(defn topics2svg [topic-map]
   (let [freqs (cum-freqs topic-map)
         font-fn (freq-based-font-fn freqs)]
-    (display-graph (:topic-graph topic-map)
-                    :name-fn (freq-based-name-fn freqs)
-                    :font-fn (freq-based-font-fn freqs))))
+    (graph2svg (:topic-graph topic-map)
+               :name-fn (freq-based-name-fn freqs)
+               :font-fn (freq-based-font-fn freqs))))
 
+(defn display-topics [topic-map]
+  (dot/show-svg (topics2svg topic-map)))
 
 ;;;;;;;;;;;;;;;;;;;;;; Temporary helper functions for playing in repl ;;;;;;;;;;;;;;;;;;;;;;; 
 

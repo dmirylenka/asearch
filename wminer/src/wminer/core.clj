@@ -1,6 +1,6 @@
 (ns wminer.core
   (:import [org.wikipedia.miner.util WikipediaConfiguration]
-           [org.wikipedia.miner.model Wikipedia Article Category Page Page$PageType]
+           [org.wikipedia.miner.model Wikipedia Article Category Redirect Page Page$PageType]
            [org.wikipedia.miner.annotation Disambiguator TopicDetector Topic]
            [org.wikipedia.miner.annotation.weighting LinkDetector]
            [org.wikipedia.miner.comparison ArticleComparer])
@@ -35,8 +35,36 @@
 (defn ^ArticleComparer art-comparer []
   (@resources :art-comparer))
 
-(defn ->wapi-article [^Article article]
-  (wapi/->Article (.getId article) (.getTitle article)))
+(defn page-by-id [id]
+  (.getPageById (@resources :wikipedia) id))
+
+(defn resolve-redirect [^Article article]
+  (let [^Redirect redirect (page-by-id (.getId article))
+        target (.getTarget redirect)]
+    (when-not target
+      (println "Empty target page, probably redirect loop:" article))
+    target))
+
+(defn redirect? [^Page page]
+  (= Page$PageType/redirect (.getType page)))
+
+;; (defn resolve-if-redirect [^Topic topic]
+;;   (cond-> topic
+;;     (redirect? topic) resolve-redirect))
+
+(defn mk-wapi-article [id]
+  (let [page (page-by-id id)
+        article (cond-> page (redirect? page) resolve-redirect)]
+    (when article
+      (wapi/->Article (.getId article) (.getTitle article)))))
+
+;; (defn ->wapi-article [^Topic topic] 
+;;   (let [article (resolve-if-redirect topic)]
+;;     (when article
+;;       (wapi/->Article (.getId article) (.getTitle article)))))
+
+(defn ->wapi-article [^Topic topic] 
+  (mk-wapi-article (.getId topic) (.getTitle topic)))
 
 (defn ^Article ->wminer-article [article]
   (.getPageById (wikipedia) (:id article)))
@@ -55,11 +83,35 @@
       all-topics
       (.getBestTopics (link-detector) all-topics probability))))
 
+(defn get-wiki-topics-jointly
+  "Returns a collection of wikiminer Topics detected in a string."
+  [snippets & [probability]]
+  (println "joint annotation")
+  (let [snippets (map #(str %". ") snippets)
+        query (string/join snippets)
+        snippet-ends (reductions + (map count snippets))
+        all-topics (.getTopics (topic-detector) query nil)
+        topics (if-not probability
+                 all-topics
+                 (.getBestTopics (link-detector) all-topics probability))
+        topic-pos (sort-by (comp (memfn getEnd) second)
+                           (for [topic topics
+                                 pos (.getPositions topic)]
+                             [topic pos]))
+        iter (fn [topics-grouped topic-pos-left snippet-ends]
+               (if (empty? snippet-ends)
+                 topics-grouped
+                 (let [next-position (first snippet-ends)
+                       split-fn #(< (.. (second %) (getEnd)) next-position)
+                       [topics-before topics-after] (split-with split-fn topic-pos-left)]
+                   (recur (conj topics-grouped (set (map first topics-before))) topics-after (rest snippet-ends)))))]
+(iter [] topic-pos snippet-ends)))
+
 (defn- get-title [^Topic topic]
   (.getTitle topic))
 
 (defn get-topics
-  "Same as get-wiki-topics, but returns only topic titles in the format as in the URLs of Wikipedia articles."
+  "Same as get-wik-topics, but returns only topic titles in the format as in the URLs of Wikipedia articles."
   [string & [probability]]
   (map get-title (get-wiki-topics string probability)))
 
@@ -72,9 +124,6 @@
 
 (defn cat-by-title [title]
   (.getCategoryByTitle (@resources :wikipedia) title))
-
-(defn page-by-id [title]
-  (.getPageById (@resources :wikipedia) title))
 
 (def page-types
   {:article Page$PageType/article
@@ -97,16 +146,35 @@
       (->> article .getLinksOut (map (memfn getTitle)) #_(map string/lower-case))
       (throw (Exception. (str "Could not find neither article nor category with the main article:" topic-title))))))
 
+(defn parent-cats [cat]
+  (let [parents (map ->wapi-category
+                     (.getParentCategories
+                      (->wminer-category cat)))
+        freqs (frequencies parents)
+        non-unique (map first (filter #(> (second %) 1) freqs))]
+    (doseq [parent non-unique]
+      (println "Weirdly, parent" parent "occurs more than once for" cat))
+    (set parents)))
+
 (deftype WikiService []
   wapi/IWikiService
   (-annotate [this docs]
-    (for [doc docs 
-          :let [docstr (wapi/doc-string doc)]
-          topic (get-wiki-topics docstr 1e-4)
-          position (.getPositions topic)]
-      (wapi/->DocArticleLink doc (->wapi-article topic)
-                             (.substring docstr (.getStart position) (.getEnd position))
-                             (.getWeight topic))))
+    (let [->wapi-article-cached (comp (memoize mk-wapi-article) (memfn getId))
+          doc-strings (map wapi/doc-string docs)
+          ;joint-string (string/join ". " doc-strings)
+          ;doc-topics (map vector docs (get-wiki-topics-jointly doc-strings 5e-1))
+          ]
+      (for [doc docs 
+            ;[doc topics] doc-topics
+            :let [doc-string (wapi/doc-string doc)]
+            topic (get-wiki-topics doc-string 5e-1)
+            ;topic topics
+            :let [wapi-article (->wapi-article-cached topic)]
+            :when wapi-article
+            position (.getPositions topic)]
+        (wapi/->DocArticleLink doc wapi-article
+                               (.substring doc-string (.getStart position) (.getEnd position))
+                               (.getWeight topic)))))
   (-relatedness [this article-pairs]
     (for [[a1 a2] article-pairs
           :let [wminer-a1 (->wminer-article a1)
@@ -117,10 +185,9 @@
     (map ->wapi-category (.getParentCategories (->wminer-article article))))
   (-cat-relations [this categories]
     (let [wiki (wikipedia)
-          categories (set categories)
-          parent-cats #(map ->wapi-category (.getParentCategories (->wminer-category %)))]
+          categories (set categories)]
       (for [cat categories
-            parent (filter categories (parent-cats cat))] 
+            parent (filter categories (parent-cats cat))]
         [cat parent]))))
 
 (def service (WikiService.))

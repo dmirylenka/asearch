@@ -10,25 +10,9 @@
   String
   (doc-string [this] this))
 
-;(defprotocol IArticle
-;  (article-title [this])
-;  (article-id [this]))
-;
-;(defprotocol ICategory
-;  (category-title [this])
-;  (category-id [this]))
+(defrecord Article [id title])
 
-(defrecord Article [id title]
- ;IArticle
- ;(article-title [this] title)
- ;(article-id [this] id)
-  )
-
-(defrecord Category [id title]
- ;ICategory 
- ;(category-title [this] title)
- ;(category-id [this] id)
-  )
+(defrecord Category [id title])
 
 (defrecord DocArticleLink [doc article fragment strength])
 
@@ -60,4 +44,3 @@
       (u/map-val sort-fn)
       (u/map-val first)
       vals)))
-

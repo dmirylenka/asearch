@@ -4,8 +4,10 @@
   (:import (java.io IOException InterruptedIOException)
            (org.apache.http.conn ConnectTimeoutException)))
 
+;TODO: move to configuration
 (def mas-search-url "http://academic.research.microsoft.com/json.svc/search")
 
+;TODO: move to configuration
 (def ^:private ms-app-id "ec26a381-a89f-4749-b946-78d95175982d")
 
 (def default-params

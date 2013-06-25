@@ -131,12 +131,17 @@
              {alias enum})))
 
 (defprotocol Result
+  (success? [this])
   (success-value [this])
   (-bind [this result-fn]))
+
+(defn fail? [this]
+  (not (success? this)))
 
 (defrecord Success [value]
   Result
   (success-value [this] (:value this))
+  (success? [this] true)
   (-bind [this result-fn]
     (result-fn (:value this))))
 
@@ -144,24 +149,28 @@
   Result
   (success-value [this]
     (throw (Exception. (str "Can't get a success value of Failure " (:error this)))))
+  (success? [this] false)
   (-bind [this result-fn]
     this))
 
 (extend-type Object
   Result
-  (sucess-value [this] this)
+  (success-value [this] this)
+  (success? [this] true)
   (-bind [this result-fn] (result-fn this)))
 
 (extend-type nil
   Result
-  (sucess-value [this] nil)
+  (success-value [this] nil)
+  (success? [this] false)
   (-bind [this result-fn] (result-fn nil)))
 
-(defn success? [result]
-  (instance? Success result))
+;; (defmulti success? [result]
+;;   (instance? utils.core.Success result))
 
-(defn fail? [result]
-  (instance? Fail result))
+;; (defn fail? [result]
+;;   (instance? Fail result))
+
 
 (defmacro bind
   ([value fn1]
