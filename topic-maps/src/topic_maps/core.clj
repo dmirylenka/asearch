@@ -8,32 +8,22 @@
             [dot-api.core :as dot]
             [clojure.java [jdbc :as sql]]
             [clojure [set :as set]
-            [string :as string]]))
+            [string :as string]])
+  (:import (graphs.core Digraph)))
 
-;;;;;;;;;;;;;;;;;;;;;; Data types and all possible ways to instantiate them ;;;;;;;;;;;;;;;;;;;;;;; 
+;;;;;;;;;;;;;;;;;;;;;; Data types ;;;;;;;;;;;;;;;;;;;;;;; 
 
 (defprotocol IDocument
-  (doc-id [this])
-  (doc-string [this]))
+  "Abstract type for documents from which topic maps can be built.
+   Documents should extend this type and also wiki_api.core.IcDocument."
+  (doc-id [this]))
 
 (extend-protocol IDocument
   String
-    (doc-id [this] this)
-    (doc-string [this] this))
-
-(defrecord Document [obj get-id-fn string-fn]
-  IDocument
-    (doc-id [this] (get-id-fn this))
-    (doc-string [this] (string-fn this)))
-
-(extend-type topic_maps.core.IDocument
-  wapi/IDocument
-  (doc-string [this] (doc-string this)))
-
-(defn wrap-doc [obj get-id-fn string-fn]
-  (Document. obj get-id-fn string-fn))
+  (doc-id [this] this))
 
 (defprotocol ITopic
+  "An abstract type for topic in the topic maps."
   (topic-title [this])
   (topic-id [this]))
 
@@ -52,20 +42,27 @@
 (extend-protocol g/IGraphNode
   wiki_api.core.Article
     (node-id [this] (:id this))
-    (node-title [this] (:title this)))
-
-(extend-protocol g/IGraphNode
+    (node-title [this] (:title this))
   wiki_api.core.Category
     (node-id [this] (:id this))
     (node-title [this] (:title this)))
 
-;(defn mk-article [title]
-;  (Topic. ::article title))
-;
-;(defn mk-category [title]
-;  (Topic. ::category title))
+;; Type for topic maps.
+;; Consists of
+;; - topic-graph : Digraph of topics connected with parent-child relations
+;; - topic-docs : bipartite Digraph of topics and document ids with topic-docid relations
+;; - doc-map : hashmap of IDocument ids to documents
+(defrecord TopicMap [ topic-graph ^Digraph topic-docs doc-map])
 
-(defrecord TopicMap [topic-graph topic-docs doc-map])
+;; An example concrete type for documents in the topic map.
+;; The code of the package relies only on IDocument and wiki_api.core.IDocument.
+(defrecord Document [id docstr]
+  IDocument
+  (doc-id [this] (:id this))
+  wapi/IDocument
+  (doc-string [this] (:docstr this)))
+
+;;;;;;;;;;;;;;;;;;;;;; 'Primitive' functions for working with topic-maps  ;;;;;;;;;;;;;;;;;;;;;;; 
 
 (defn get-topics [topic-map]
   (g/get-nodes (:topic-graph topic-map)))
@@ -84,40 +81,6 @@
 
 (defn parent-topics [topic-map topic]
   (g/in-links (:topic-graph topic-map) topic))
-
-;;;;;;;;;;;;;;;;;;;;;; Helper functions for working with wikipedia database ;;;;;;;;;;;;;;;;;;;;;;; 
-
-(defn norm
-  [category-name]
-  (-> category-name
-   #_ (string/trim)
-   #_  string/lower-case
-    (string/replace #"\s+" "_")
-   #_  string/capitalize))
-
-(defn unnorm
-  [category-name]
-  (-> category-name 
-  #_ (string/trim)
-  #_ string/lower-case
-    (string/replace #"_" " ")
-    (string/replace #"\s+" " ")))
-
-;(defn article-categories [page]
-;  (map unnorm (wikidb/page-cats (norm page))))
-;
-;(defn cat-relations [cats]
-;  (map #(map unnorm %) (wikidb/cat-relations (map norm cats))))
-
-;(def norm wikidb/wiki-normalize)
-;
-;(def unnorm wikidb/wiki-unnormalize)
-;
-;(defn article-categories [page]
-;  (map unnorm (wikidb/page-cats (norm page))))
-;
-;(defn cat-relations [cats]
-;  (map #(map unnorm %) (wikidb/cat-relations (map norm cats))))
 
 ;;;;;;;;;;;;;;;;;;;;;; Building the topic map and related algorithms ;;;;;;;;;;;;;;;;;;;;;;; 
 
@@ -256,6 +219,7 @@
         new-out-links (->> out-link-topics
                         (remove ancestorz)
                         (map #(vector main-topic %)))]
+    (println "!! Main topic:" main-topic)
     (update-in topic-map [:topic-graph] g/add-links-safe new-out-links)))
 
 (defn- merged-topic-doc-graph* [topic-map]
@@ -338,9 +302,12 @@
 
 (defn prepare-map [docs]
   (-> docs
-    build-topic-map
-    merge-similar
-    (update-in [:topic-graph] g/break-loops)
-    remove-orphan-topics
-    (u/assocf main-topic identity :main-topic)
-    expand-main-topic))
+   init-topic-map
+   link-to-articles
+   retrieve-categories
+   link-categories
+   merge-similar
+   break-loops
+   (u/assocf main-topic identity :main-topic)
+   expand-main-topic
+   #_(#(submap % (get-topics %)))))

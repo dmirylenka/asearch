@@ -59,12 +59,13 @@
   {:pre [(instance? utils.core.Result results)]}
   (u/fmap results submaps/build-topic-map))
 
-(defn select-submap [topic-map n-topics]
+(defn get-summary [{:keys [summarizer topic-map n-topics] :as data}]
   {:pre [(instance? utils.core.Result topic-map)
+         (instance? utils.core.Result summarizer)
          (not (nil? n-topics))
          (or (u/fail? topic-map)
              (>= (count (tmaps/get-topics (:value topic-map))) n-topics))]}
-  (u/fmap topic-map #(submaps/best-by-greedy-coverage % n-topics)))
+  (u/fmap summarizer submaps/get-summary))
 
 (defn compute-svg [submap]
   {:pre [(instance? utils.core.Result submap)]}
@@ -86,29 +87,45 @@
      :title-results title-results
      :topic-index (u/key-map :id topics)}))
 
+(def -summarizer (u/->Success submaps/dagger-summarizer))
+
 (defn new-topic-map-data [query]
   {:pre [(not (string/blank? query))]}
   (println "Preparing new data:" query)
   (-> {:query query}
       (u/assocf get-query-results :query :results)
       (u/assocf build-topic-map :results :topic-map)
-      (u/assocf count (comp tmaps/get-topics :value :topic-map) :n-topics-max)))
+      (u/assocf count (comp tmaps/get-topics :value :topic-map) :n-topics-max)
+      (assoc :summarizer -summarizer)))
 
 (defn get-session-data [query]
   (let [data (session/get :session-data)]
-    (when (= query (:query data))
+    (when (and (= query (:query data))
+               (u/success? (:topic-map data)))
       (println "Hit the session data:" query)
       data)))
 
 (defn get-query-cache [query]
   (when-let [data (query-cache query)]
     (println "Hit the query cache:" query)
-    data))
+    (assoc 
+        data
+      :summarizer -summarizer)
+))
 
 (defn topic-map-data [query]
   (or (get-session-data query)
       (get-query-cache query)
       (new-topic-map-data query)))
+
+(defn build-summary
+  "Returns the updated summarizer with the computed summary."
+  [{:keys [summarizer topic-map n-topics] :as data}]
+  {:pre [(instance? utils.core.Result topic-map)
+         (not (nil? n-topics))
+         (or (u/fail? topic-map)
+             (>= (count (tmaps/get-topics (:value topic-map))) n-topics))]}
+  (u/bind summarizer (fn [smr] (u/fmap topic-map #(submaps/build-summary smr % n-topics)))))
 
 (defn prepare-data [{:keys [query n-topics] :as request}]
   {:pre [(not (string/blank? query))
@@ -116,7 +133,8 @@
   (-> request
       (merge (topic-map-data query))
       (assoc :n-topics n-topics)
-      (u/assocf #(select-submap % n-topics) :topic-map :submap)
+      (u/assocf build-summary identity :summarizer)
+      (u/assocf get-summary identity :submap)
       (u/assocf compute-svg :submap :svg)
       (u/assocf #(u/fmap % build-js-data) :submap :json)))
   
@@ -143,6 +161,7 @@
         (-> {:query query :n-topics n-topics}
             validate
             prepare-data
+           (doto (#(session/put! :session-data %)))
             render-json-svg))
   (route/resources "/")
   (route/not-found "Not Found"))

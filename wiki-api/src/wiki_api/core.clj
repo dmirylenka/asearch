@@ -22,7 +22,8 @@
   (-annotate [this docs])
   (-relatedness [this article-pairs])
   (-article-categories [this article])
-  (-cat-relations [this categories]))
+  (-cat-relations [this categories])
+  (-search [this string opt]))
 
 (defn annotate [service & docs]
   (-annotate service docs))
@@ -34,6 +35,11 @@
 
 (defn cat-relations [service & categories]
   (-cat-relations service categories))
+
+(def search* -search)
+
+(defn search [service query & {:as opt}]
+  (search* service query opt))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Utility functions ;;;;;;;;;;;;;;;;
 

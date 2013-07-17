@@ -1,9 +1,10 @@
 (ns wminer.core
-  (:import [org.wikipedia.miner.util WikipediaConfiguration]
-           [org.wikipedia.miner.model Wikipedia Article Category Redirect Page Page$PageType]
+  (:import [org.wikipedia.miner.util WikipediaConfiguration Position]
+           [org.wikipedia.miner.model Wikipedia Article Category Redirect Page Page$PageType Label Label$Sense]
            [org.wikipedia.miner.annotation Disambiguator TopicDetector Topic]
            [org.wikipedia.miner.annotation.weighting LinkDetector]
-           [org.wikipedia.miner.comparison ArticleComparer])
+           [org.wikipedia.miner.comparison ArticleComparer]
+           [org.wikipedia.miner.util NGrammer])
   (:require (clojure.java [io :as io])
             (utils [core :as u]
                    [text :as t])
@@ -15,7 +16,7 @@
     (let [wiki-conf (WikipediaConfiguration. (io/file "/Users/dmirylenka/code/asearch-modular/wminer/resources/wikipedia-template.xml")) 
           wikipedia (Wikipedia. wiki-conf false)
           disambiguator (Disambiguator. wikipedia)
-          topic-detector (TopicDetector. wikipedia disambiguator true false)
+          topic-detector (TopicDetector. wikipedia disambiguator)
           link-detector (LinkDetector. wikipedia)
           art-comparer (ArticleComparer. wikipedia)]
       {:wikipedia wikipedia
@@ -35,36 +36,30 @@
 (defn ^ArticleComparer art-comparer []
   (@resources :art-comparer))
 
-(defn page-by-id [id]
-  (.getPageById (@resources :wikipedia) id))
+(defn ^Page page-by-id [id]
+  (.getPageById (wikipedia) id))
 
-(defn resolve-redirect [^Article article]
+(defn get-id [^Page page]
+  (.getId page))
+
+(defn ^Article resolve-redirect [^Article article]
   (let [^Redirect redirect (page-by-id (.getId article))
         target (.getTarget redirect)]
     (when-not target
-      (println "Empty target page, probably redirect loop:" article))
+      (println "Empty target page:" article))
     target))
 
 (defn redirect? [^Page page]
   (= Page$PageType/redirect (.getType page)))
 
-;; (defn resolve-if-redirect [^Topic topic]
-;;   (cond-> topic
-;;     (redirect? topic) resolve-redirect))
-
 (defn mk-wapi-article [id]
   (let [page (page-by-id id)
-        article (cond-> page (redirect? page) resolve-redirect)]
+        ^Article article (cond-> page (redirect? page) resolve-redirect)]
     (when article
       (wapi/->Article (.getId article) (.getTitle article)))))
 
-;; (defn ->wapi-article [^Topic topic] 
-;;   (let [article (resolve-if-redirect topic)]
-;;     (when article
-;;       (wapi/->Article (.getId article) (.getTitle article)))))
-
 (defn ->wapi-article [^Topic topic] 
-  (mk-wapi-article (.getId topic) (.getTitle topic)))
+  (mk-wapi-article (.getId topic)))
 
 (defn ^Article ->wminer-article [article]
   (.getPageById (wikipedia) (:id article)))
@@ -94,36 +89,40 @@
         topics (if-not probability
                  all-topics
                  (.getBestTopics (link-detector) all-topics probability))
-        topic-pos (sort-by (comp (memfn getEnd) second)
-                           (for [topic topics
-                                 pos (.getPositions topic)]
+        get-end (fn [^Position pos] (.getEnd pos))
+        topic-pos (sort-by (comp get-end second)
+                           (for [^Topic topic topics
+                                 ^Position pos (.getPositions topic)]
                              [topic pos]))
         iter (fn [topics-grouped topic-pos-left snippet-ends]
                (if (empty? snippet-ends)
                  topics-grouped
                  (let [next-position (first snippet-ends)
-                       split-fn #(< (.. (second %) (getEnd)) next-position)
+                       split-fn #(< (-> % second get-end) next-position)
                        [topics-before topics-after] (split-with split-fn topic-pos-left)]
                    (recur (conj topics-grouped (set (map first topics-before))) topics-after (rest snippet-ends)))))]
 (iter [] topic-pos snippet-ends)))
 
-(defn- get-title [^Topic topic]
-  (.getTitle topic))
+(defn- get-title [^Page page]
+  (.getTitle page))
+
+(defn get-prob [^Label$Sense sense]
+  (.getPriorProbability sense))
 
 (defn get-topics
   "Same as get-wik-topics, but returns only topic titles in the format as in the URLs of Wikipedia articles."
   [string & [probability]]
   (map get-title (get-wiki-topics string probability)))
 
-(defn article-by-title [title]
-  (.getArticleByTitle (@resources :wikipedia) title))
+(defn ^Article article-by-title [title]
+  (.getArticleByTitle (wikipedia) title))
 
 (defn out-links [title]
-  (map (memfn getTitle)
+  (map get-title
        (.getLinksOut (article-by-title title))))
 
-(defn cat-by-title [title]
-  (.getCategoryByTitle (@resources :wikipedia) title))
+(defn ^Category cat-by-title [title]
+  (.getCategoryByTitle (wikipedia) title))
 
 (def page-types
   {:article Page$PageType/article
@@ -138,12 +137,12 @@
                               (let [category (cat-by-title category-title)
                                     cat-articles (.getChildArticles category)
                                     stemmed-title (stem topic-title)
-                                    main-article? #(= stemmed-title (stem (.getTitle %)))]
+                                    main-article? #(= stemmed-title (stem (get-title %)))]
                                 (first (filter main-article? cat-articles))))
 
-        article (or article-candidate (main-article-by-cat topic-title))]
+        ^Article article (or article-candidate (main-article-by-cat topic-title))]
     (if article
-      (->> article .getLinksOut (map (memfn getTitle)) #_(map string/lower-case))
+      (->> article .getLinksOut (map get-title) #_(map string/lower-case))
       (throw (Exception. (str "Could not find neither article nor category with the main article:" topic-title))))))
 
 (defn parent-cats [cat]
@@ -156,22 +155,45 @@
       (println "Weirdly, parent" parent "occurs more than once for" cat))
     (set parents)))
 
+(defn get-senses*
+  "Gets possible senses (org.wikipedia.miner.model.Label$Sense) for the query.
+   Analogous to the search web service of Wikipedia miner with complex=false
+   (the whole query rather than its parts should refer to the sence).
+   Options:
+   - :min-prob : the minimum probability of the sense returned"
+  [query {:keys [min-prob] :as opt :or {min-prob 0}}]
+  (let [wiki (wikipedia)
+        ngrammer (NGrammer. (.. wiki (getConfig) (getSentenceDetector)) (.. wiki (getConfig) (getTokenizer)))
+        span (first (.ngramPosDetect ngrammer query))
+        label (.getLabel wiki span query)]
+    (->> (.getSenses label)
+         (filter #(> (get-prob %) min-prob)))))
+
+(defn get-senses
+  "Gets possible senses (org.wikipedia.miner.model.Label$Sense) for the query.
+   Analogous to the search web service of Wikipedia Miner with complex=false
+   (the whole query rather than its parts should refer to the sence).
+   Options:
+      :min-prob : the minimum probability of the sense returned."
+  [query & {:as opt}]
+  (get-senses* query opt))
+
 (deftype WikiService []
   wapi/IWikiService
   (-annotate [this docs]
-    (let [->wapi-article-cached (comp (memoize mk-wapi-article) (memfn getId))
+    (let [->wapi-article-cached (comp (memoize mk-wapi-article) get-id)
           doc-strings (map wapi/doc-string docs)
           ;joint-string (string/join ". " doc-strings)
           ;doc-topics (map vector docs (get-wiki-topics-jointly doc-strings 5e-1))
           ]
       (for [doc docs 
             ;[doc topics] doc-topics
-            :let [doc-string (wapi/doc-string doc)]
-            topic (get-wiki-topics doc-string 5e-1)
+            :let [^String doc-string (wapi/doc-string doc)]
+            ^Topic topic (get-wiki-topics doc-string 5e-2)
             ;topic topics
             :let [wapi-article (->wapi-article-cached topic)]
             :when wapi-article
-            position (.getPositions topic)]
+            ^Position position (.getPositions topic)]
         (wapi/->DocArticleLink doc wapi-article
                                (.substring doc-string (.getStart position) (.getEnd position))
                                (.getWeight topic)))))
@@ -188,6 +210,12 @@
           categories (set categories)]
       (for [cat categories
             parent (filter categories (parent-cats cat))]
-        [cat parent]))))
+        [cat parent])))
+  (-search [this query opt]
+    (letfn [(mk-article [^Label$Sense sense]
+              (when-let [article (->wapi-article sense)]
+                (assoc article :prob (get-prob sense))))]
+      (->> (get-senses* query opt)
+           (keep mk-article)))))
 
 (def service (WikiService.))
