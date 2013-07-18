@@ -3,12 +3,13 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Protocols and data types that MUST be used by Wikipedia service wrappers ;;;;;;;;;;;;;;;;
 
-(defprotocol IDocument
-  (doc-string [this]))
+;; evil. rewrite the services and apis to work on strings
+;; (defprotocol IDocument
+;;   (doc-string [this]))
 
-(extend-protocol IDocument
-  String
-  (doc-string [this] this))
+;; (extend-protocol IDocument
+;;   String
+;;   (doc-string [this] this))
 
 (defrecord Article [id title])
 
@@ -16,10 +17,10 @@
 
 (defrecord DocArticleLink [doc article fragment strength])
 
-(defrecord ArticleRel [articles strength])
+;; (defrecord ArticleRel [articles strength])
 
 (defprotocol IWikiService
-  (-annotate [this docs])
+  (-annotate [this strings])
   (-relatedness [this article-pairs])
   (-article-categories [this article])
   (-cat-relations [this categories])

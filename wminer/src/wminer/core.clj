@@ -82,7 +82,7 @@
   "Returns a collection of wikiminer Topics detected in a string."
   [snippets & [probability]]
   (println "joint annotation")
-  (let [snippets (map #(str %". ") snippets)
+  (let [snippets (map #(str % ". ") snippets)
         query (string/join snippets)
         snippet-ends (reductions + (map count snippets))
         all-topics (.getTopics (topic-detector) query nil)
@@ -180,29 +180,31 @@
 
 (deftype WikiService []
   wapi/IWikiService
-  (-annotate [this docs]
+  (-annotate [this strings]
     (let [->wapi-article-cached (comp (memoize mk-wapi-article) get-id)
-          doc-strings (map wapi/doc-string docs)
-          ;joint-string (string/join ". " doc-strings)
-          ;doc-topics (map vector docs (get-wiki-topics-jointly doc-strings 5e-1))
+          joint-string (string/join ". " strings)
+          doc-topics (map vector strings (get-wiki-topics-jointly strings 5e-1))
           ]
-      (for [doc docs 
-            ;[doc topics] doc-topics
-            :let [^String doc-string (wapi/doc-string doc)]
-            ^Topic topic (get-wiki-topics doc-string 5e-2)
-            ;topic topics
+      (for [;string strings
+            [string topics] doc-topics
+            ;^Topic topic (get-wiki-topics string 5e-2)
+            topic topics
             :let [wapi-article (->wapi-article-cached topic)]
             :when wapi-article
-            ^Position position (.getPositions topic)]
-        (wapi/->DocArticleLink doc wapi-article
-                               (.substring doc-string (.getStart position) (.getEnd position))
-                               (.getWeight topic)))))
+            ^Position position (.getPositions topic)
+            :let [start (.getStart position)
+                  end (.getEnd position)]]
+        (->
+         (wapi/->DocArticleLink string wapi-article
+                                (.substring joint-string start end)
+                                (.getWeight topic))
+         (assoc :start start :end end)))))
   (-relatedness [this article-pairs]
     (for [[a1 a2] article-pairs
           :let [wminer-a1 (->wminer-article a1)
                 wminer-a2 (->wminer-article a2)
                 score (.getRelatedness (art-comparer) wminer-a1 wminer-a2)]]
-      (wapi/->ArticleRel #{a1 a2} score)))
+      score))
   (-article-categories [this article]
     (map ->wapi-category (.getParentCategories (->wminer-article article))))
   (-cat-relations [this categories]
