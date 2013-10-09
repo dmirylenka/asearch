@@ -1,6 +1,6 @@
 (ns acm-map-exp.acm-map-exp
-  (:use [acm-map-exp.acm :as acm])
   (:require [clojure.string :as string]
+            [clojure.java.io :as io]
             [acm-map-exp.acm :as acm]
             [acm-map-exp.experiment :as exp]
             [acm-map-exp.methods :as algo]
@@ -12,7 +12,7 @@
 ;; ::conf
 (def acm-conf
   ^{:type ::conf}
-   {:acm-file "./resources/data/ACMCCS.xml"
+   {:acm-file "/Users/dmirylenka/data/dbpedia/ACMCCS.rdf.xml"
     :rand-seed 751881
     :sample-size 100})
 
@@ -38,10 +38,10 @@
   "Creates the input data for experiments with ACM:
    acm taxonomy, all its concepts, just top concepts, and just leaves."
   [conf]
-  (let [acm (read-acm conf)
-        concepts (all-concepts acm)
-        top (top-concepts acm)
-        leaves (filter leaf? concepts)]
+  (let [acm (acm/read-acm conf)
+        concepts (acm/all-concepts acm)
+        top (acm/top-concepts acm)
+        leaves (filter acm/leaf? concepts)]
     ^{:type ::acm-input-data}
      {:acm acm
       :concepts concepts
@@ -58,7 +58,7 @@
 
 ;; ::concepts->wiki is map[:acm/concept seq[:algo/wiki-link]]
 
-;; ::acm-input-data -> ::descr-data
+;; ::acm-input-data -> ::descr-data[concepts->wiki]
 (defn map2wiki-label-simple-search
   "Maps concepts from ACM CSS to Wikipedia articles by their preferred and alternative labels.
    Uses simple search algorithm of Wikipedia Miner (matching the whole input string to the article labels (title, redirect and anchor texts).
@@ -104,12 +104,12 @@
         nmapped-stats [{:nmapped nmapped :nfailed nfailed
                         :percent-mapped (/ nmapped (+ nmapped nfailed 0.0))}]
         mapped-sample (mapv (fn [[concept links]]
-                             {:concept (pref-label concept)
+                             {:concept (acm/pref-label concept)
                               :label (:label (first links))
                               :article (:title (:article (first links)))})
                            (u/rand-take sample-size mapped rand-int-gen))
         failed-sample (mapv (fn [[concept links]]
-                             {:concept (pref-label concept)})
+                             {:concept (acm/pref-label concept)})
                            (u/rand-take sample-size failed rand-int-gen))]
     ^{:type ::report}
      {:nmapped-stats
@@ -143,5 +143,65 @@
 ;;         conf (new-conf)
 ;;         report (report-sample-mappings stats conf)]
 ;;     (exp/save-to-file report report-file)))
+
+
+;; ::string -> vector[::mapping]
+(defn acm-dbpedia-mapping [input-data conf]
+  (let [file-name (:mapping-file conf)
+        lines (string/split (slurp file-name) #"\n")
+        pattern #"^.*#(\d+)\|(.*?)\|.*\|(.*)\|.*$"
+        concepts (:concepts input-data)
+        id->concept (->> concepts
+                      (u/key-map acm/concept-id))
+        mk-category (fn [title] {:title title})
+        line->mapping #(let [[acm-id cat-name prob] (rest (re-find pattern %))
+                             concept (id->concept acm-id)]
+                         [concept
+                          (assoc
+                              (algo/mk-wiki-link
+                               (acm/pref-label concept)
+                               (mk-category cat-name))
+                            :prob (Double/parseDouble prob))])
+        default-empty-maping (zipmap concepts (repeat []))
+        successful-mappings (->> lines
+                                 (map line->mapping)
+                                 (u/group-map first second)
+                                 (u/map-val (partial sort-by (comp - :prob))))]
+    
+    (merge default-empty-maping
+           successful-mappings)))
+
+;; ::acm-input-data -> ::descr-data[concepts->wiki]
+(defn logmap-acm-wiki-cateories-match [input-data conf]
+  (let [mapping (acm-dbpedia-mapping input-data conf)]
+    (mk-descr-data
+     "Mapping from ACM CCS concepts to Wikipedia categories.
+      Each concept has a (possibly empty) list label->category links."
+     mapping)))
+
+(defn logmap-match-precision-coverage-2013-08-05-0 []
+  (let [experiment {:generate-data logmap-acm-wiki-cateories-match
+                    :compute-stats mapped-failed-stats
+                    :generate-report report-sample-mappings}
+        conf (new-conf :exp-name "logmap-match-precision-coverage-2013-08-05-0"
+                       :mapping-file "/Users/dmirylenka/data/dbpedia/logmap-dbpedia-acm-match/logmap2_mappings.txt"
+                       :file-name-fn :type-suffix
+                       :description 
+"Examine the matching between ACM CCS and Wikipedia-based category hierarchy produced by logmap. Wikipedia-based hierarchy is the result of the sparql query to DBPedia that selects the categories within 7 steps down from Computer_science. Every cycle in the obtained hierarchy is detected and merged into a single node. The experiment reports sample successfull mappings as well as non-mappings.")
+        input-data (mk-acm-input-data conf)]
+    (exp/run-experiment experiment input-data conf)))
+
+
+(defn logmap-match-precision-coverage-2013-08-07-0 []
+  (let [experiment {:generate-data logmap-acm-wiki-cateories-match
+                    :compute-stats mapped-failed-stats
+                    :generate-report report-sample-mappings}
+        conf (new-conf :exp-name "logmap-match-precision-coverage-2013-08-07-0"
+                       :mapping-file "/Users/dmirylenka/data/dbpedia/logmap-dbpedia-acm-match-art/logmap2_mappings.txt"
+                       :file-name-fn :type-suffix
+                       :description 
+"Examine the matching between ACM CCS and Wikipedia-based category-article hierarchy produced by logmap. Wikipedia-based hierarchy is obtained by querying DBPedia for the categories within 7 steps down from Computer_science, and articles that belong to them. Every cycle in the obtained hierarchy is detected and merged into a single node. The experiment reports sample successfull mappings as well as non-mappings.")
+        input-data (mk-acm-input-data conf)]
+    (exp/run-experiment experiment input-data conf)))
 
 (defn -main [args])

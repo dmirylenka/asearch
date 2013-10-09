@@ -126,12 +126,12 @@ ScienScanJs = function() {
         }
 
         var citationHtml = function(paper) {
-           if (paper['citation-count'] != 0) {
+           if (paper['ncit'] != 0) {
               return $('<span>').addClass('citation')
                     .append('&nbsp;(')
                     .append($('<a>').attr('href', masCitUrl(paper.id))
                        .append('Citations: ')
-                       .append(paper['citation-count']))
+                       .append(paper['ncit']))
                     .append(')');
            }
            return '';
@@ -257,7 +257,7 @@ ScienScanJs = function() {
 
 
 	var paperSortFn = function(x,y) {
-		return resultData[y]["citation-count"] - resultData[x]["citation-count"];
+		return resultData[y]["ncit"] - resultData[x]["ncit"];
 	}	
 
         var showTopic = function(topic){

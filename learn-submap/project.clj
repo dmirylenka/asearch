@@ -6,6 +6,9 @@
                  [unitn/wiki-api "0.0.1"]
                  [unitn/topic-maps "0.0.1"]
                  [unitn/seq-learn "0.0.1"]
-                 [unitn/mas-api "0.0.1"]]
+                 [unitn/search-api "0.0.1"]
+                 [unitn/mas-api "0.0.1"]
+                 [unitn/arxiv-api "0.0.1"]
+                 [unitn/arnetminer "0.0.1"]]
   :main learn-submap.lrn-sbm
   :jvm-opts ["-Xmx2g" "-server"])

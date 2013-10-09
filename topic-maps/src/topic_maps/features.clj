@@ -239,6 +239,11 @@
 (defn map-01 [x]
   (if x (/ x (+ 1 x)) 1))
 
+(defn always-one
+  "Feature that is always equal to one."
+  ([topic-map] {:value 1})
+  ([topic-map submap old-value new-topic] {:value 1}))
+
 ;rewritten
 (defn avg-pairwise-dist
   "Avegage pairwise distance between the topics in the map.

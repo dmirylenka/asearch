@@ -71,7 +71,7 @@
 
 (defn slider [n-topics-min n-topics-max n-topics]
  (let [n-topics-min (or n-topics-min 1)
-       n-topics-max (min n-topics-max 100)]
+       n-topics-max (min n-topics-max 25)]
    [:div#minFreqSlider
     (javascript-tag (str "$(function() {
                           $('#minFreqSlider').slider({

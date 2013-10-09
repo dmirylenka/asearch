@@ -1,6 +1,8 @@
 (ns mas-api.core 
   (:require [clj-http.client :as http]
-            [utils.core :as u])
+            [utils.core :as u]
+            [search-api.search-api :as sapi]
+            [clojure.set])
   (:import (java.io IOException InterruptedIOException)
            (org.apache.http.conn ConnectTimeoutException)))
 
@@ -43,6 +45,7 @@
       (println "Exception while querying MsAcademic:" (.getMessage e))
       (u/->Fail :unavailable))))
 
+
 (defn get-mas-response [http-response]
   (try
     (let [{:keys [status body]} http-response]
@@ -69,6 +72,19 @@
     (u/->Fail :empty-results)
     (u/->Success search-results)))
 
+(defn extract-venue [paper]
+  (-> paper
+      (assoc :venue (or (:full-name (:conference paper)) (:full-name (:journal paper))))
+      (dissoc :conference :journal)))
+
+(defn mk-paper [paper]
+  (-> paper
+      (clojure.set/rename-keys {:citation-count :ncit})
+      extract-venue
+      (select-keys sapi/paper-fields)
+      (update-in [:author] (partial map #(select-keys % sapi/author-fields)))
+      sapi/mk-paper))
+
 (defn search-papers [query & more]
   (let [opt (apply hash-map more)
         timeout (or (:timeout opt) default-timeout)
@@ -80,4 +96,12 @@
     (u/bind (send-http-request query-params timeout)
             get-mas-response
             get-papers
-            (if fail-empty? fail-if-empty u/->Success))))
+            (if fail-empty? fail-if-empty u/->Success)
+            (comp u/->Success #(map mk-paper %)))))
+
+(deftype AcademicSearch []
+  sapi/IAcademicSearch
+  (-search-papers [this query params]
+    (apply search-papers query (apply concat params))))
+
+(def service (AcademicSearch.))

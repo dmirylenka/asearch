@@ -8,7 +8,10 @@
    [noir.session :as session]
    [cheshire [core :as json]]
    [utils.core :as u]
+   [search-api.search-api :as sapi]
    [mas-api.core :as mas]
+   [arxiv-api.core :as arxiv]
+   [arnetminer.dataset :as aminer]
    [topic-maps.core :as tmaps]
    [scienscan.html :as html]
    [scienscan.submaps :as submaps]))
@@ -35,7 +38,7 @@
   (read-string (slurp (cache-filename query))))
 
 (def query-cache
-  (u/val-map cached-data [(options :query)]))
+  (u/val-map cached-data [#_(options :query)]))
 
 (defn validate [{:keys [query n-topics] :as params}]
   (let [default-params (-> options
@@ -47,13 +50,20 @@
         (#(merge default-params %))
         (update-in [:n-topics] #(Integer/parseInt %)))))
 
+(defn mk-paper [{:keys [id author title abstract year] :as paper}]
+  (let [doc-id (str title " " year " " (doall (string/join ", " (map :full-name author))))
+        doc-string (str title ". " abstract)]
+    (-> paper
+        (assoc :doc-id doc-id
+               :string doc-string))))
+
 (defn get-query-results [query]
   {:pre [(not (string/blank? query))]}
   (let [timeout (options :ms-timeout)
         n-results (options :n-results)]
     (u/fmap
-     (mas/search-papers query :end n-results :timeout timeout)
-     (partial map map->Paper))))
+     (sapi/search-papers aminer/service query :end n-results :timeout timeout)
+     (partial map mk-paper))))
 
 (defn build-topic-map [results]
   {:pre [(instance? utils.core.Result results)]}

@@ -5,7 +5,6 @@
    [compojure.route :as route]
    [cheshire [core :as json]]
    [utils.core :as u]
-   [mas-api.core :as mas]
    [topic-maps.core :as tmaps]
    [seq-learn.core :as sl]
    [learn-submap.lrn-sbm :as lrn]))
@@ -19,6 +18,8 @@
    tmaps/init-topic-map
    tmaps/link-to-articles
    (doto (#(println (count (tmaps/get-topics %)) "articles in" (/ (- (System/currentTimeMillis) time) 1000.0))))
+   tmaps/remove-singleton-articles
+   (doto (#(println (count (tmaps/get-topics %)) "articles after removing singletons")))
    tmaps/retrieve-categories
    (doto (#(println (count (tmaps/get-topics %)) "articles and categories")))
    tmaps/link-categories
@@ -172,4 +173,4 @@
 (def dagger-summarizer
   (dagger-caching-summarizer
    (-> (lrn/new-app) :conf :features)
-   (sl/load-model "/Users/dmirylenka/code/asearch-modular/learn-submap/resources/models/10queries.model")))
+   (sl/load-model "/Users/dmirylenka/code/asearch-modular/learn-submap/resources/models/aminer-wminer-10q-13-10-09.model")))

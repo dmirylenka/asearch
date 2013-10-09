@@ -42,6 +42,12 @@
   (xml1-> (xml-zip concept) :skos:prefLabel text))
 
 ;; ::concept -> String
+(defn concept-id
+  "Id of the concept."
+  [concept]
+  (.substring (xml1-> (xml-zip concept) (attr :rdf:about)) 1))
+
+;; ::concept -> String
 (defn alt-labels
   "Alternative labels of the concept."
   [concept]

@@ -78,7 +78,7 @@
 (defn train-model [ranking & {:as opt}]
   (let [input-file (or (io/file (:input-file opt)) (temp-file "train"))
         model-file (or (io/file (:model-file opt)) (temp-file "model"))
-    ;   _ (println (path input-file))
+        _ (println (path input-file))
         _ (println (path model-file))
         input-file (write-file! ranking input-file)
 ;       _ (println "Input file for training SVM is written.")

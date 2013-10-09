@@ -4,7 +4,7 @@
            [org.wikipedia.miner.annotation Disambiguator TopicDetector Topic]
            [org.wikipedia.miner.annotation.weighting LinkDetector]
            [org.wikipedia.miner.comparison ArticleComparer]
-           [org.wikipedia.miner.util NGrammer])
+           [org.wikipedia.miner.util NGrammer NGrammer$NGramSpan])
   (:require (clojure.java [io :as io])
             (utils [core :as u]
                    [text :as t])
@@ -56,7 +56,7 @@
   (let [page (page-by-id id)
         ^Article article (cond-> page (redirect? page) resolve-redirect)]
     (when article
-      (wapi/->Article (.getId article) (.getTitle article)))))
+      (wapi/mk-article (.getId article) (.getTitle article)))))
 
 (defn ->wapi-article [^Topic topic] 
   (mk-wapi-article (.getId topic)))
@@ -65,13 +65,13 @@
   (.getPageById (wikipedia) (:id article)))
 
 (defn ->wapi-category [^Category category]
-  (wapi/->Category (.getId category) (.getTitle category)))
+  (wapi/mk-category (.getId category) (.getTitle category)))
 
 (defn ^Category ->wminer-category [category]
   (.getPageById (wikipedia) (:id category)))
 
 (defn get-wiki-topics
-  "Returns a collection of wikiminer Topics detected in a string."
+  "Returns a collection of wikiminer Topics detected in a collection of strings."
   [^String string & [probability]]
   (let [all-topics (.getTopics (topic-detector) string nil)]
     (if-not probability
@@ -81,7 +81,6 @@
 (defn get-wiki-topics-jointly
   "Returns a collection of wikiminer Topics detected in a string."
   [snippets & [probability]]
-  (println "joint annotation")
   (let [snippets (map #(str % ". ") snippets)
         query (string/join snippets)
         snippet-ends (reductions + (map count snippets))
@@ -100,7 +99,7 @@
                  (let [next-position (first snippet-ends)
                        split-fn #(< (-> % second get-end) next-position)
                        [topics-before topics-after] (split-with split-fn topic-pos-left)]
-                   (recur (conj topics-grouped (set (map first topics-before))) topics-after (rest snippet-ends)))))]
+                   (recur (conj topics-grouped topics-before) topics-after (rest snippet-ends)))))]
 (iter [] topic-pos snippet-ends)))
 
 (defn- get-title [^Page page]
@@ -110,7 +109,7 @@
   (.getPriorProbability sense))
 
 (defn get-topics
-  "Same as get-wik-topics, but returns only topic titles in the format as in the URLs of Wikipedia articles."
+  "Same as get-wiki-topics, but returns only topic titles in the format as in the URLs of Wikipedia articles."
   [string & [probability]]
   (map get-title (get-wiki-topics string probability)))
 
@@ -161,11 +160,11 @@
    (the whole query rather than its parts should refer to the sence).
    Options:
    - :min-prob : the minimum probability of the sense returned"
-  [query {:keys [min-prob] :as opt :or {min-prob 0}}]
+  [^String query {:keys [min-prob] :as opt :or {min-prob 0}}]
   (let [wiki (wikipedia)
         ngrammer (NGrammer. (.. wiki (getConfig) (getSentenceDetector)) (.. wiki (getConfig) (getTokenizer)))
-        span (first (.ngramPosDetect ngrammer query))
-        label (.getLabel wiki span query)]
+        ^NGrammer$NGramSpan span (first (.ngramPosDetect ngrammer query))
+         label (.getLabel wiki span query)]
     (->> (.getSenses label)
          (filter #(> (get-prob %) min-prob)))))
 
@@ -178,27 +177,79 @@
   [query & {:as opt}]
   (get-senses* query opt))
 
+(defn resolve-collisions [article-links]
+  (letfn [(intersects? [link1 link2]
+            (not (or (>= (:start link1) (:end link2))
+                     (>= (:start link2) (:end link1)))))
+          (split-intersecting [links]
+            (when-let [fst (first links)]
+              (split-with #(intersects? fst %) links)))
+          (iter [result links]
+            (if (empty? links)
+              result
+              (let [[intersecting other] (split-intersecting links)]
+                (recur (conj result (apply max-key :strength intersecting))
+                       other))))]
+    (iter [] article-links)))
+
+(defn resolve-collisions-as-wminer [article-links]
+  (letfn [(intersects? [link1 link2]
+            (not (or (>= (:start link1) (:end link2))
+                     (>= (:start link2) (:end link1)))))
+          (iter [result links]
+            (if (empty? links)
+              result
+              (let [outer-link (first links)
+                    inner-links (seq (take-while #(intersects? outer-link %) (next links)))
+                    max-inner (when inner-links (apply max (map :strength inner-links)))
+                    keep-links (if (and max-inner (> (* 0.8 max-inner) (:strength outer-link)))
+;                                 (do (println "inner: " (:fragment outer-link) ":" (map (comp :title :article) inner-links))
+                                     inner-links
+                                     ;) ;; keeping inner links
+                                 ;; (do (when max-inner
+                                 ;;       (println "outer: " (:fragment outer-link) ":" (:title (:article outer-link))))
+                                     [outer-link]
+                                     )
+                                 ;; ) ;; keeping outer link
+                    rest-links (drop (count inner-links) (next links))]
+                (recur (into result keep-links) rest-links))))]
+    (iter [] (sort-by (juxt :start (comp - :end)) article-links))))
+                    
+
+(defn annotate-jointly
+  [strings prob]
+  (println "joint annotation")
+  (let [->wapi-article-cached (comp (memoize mk-wapi-article) get-id)
+        joint-string (string/join ". " strings)
+        doc-topics (map vector strings (get-wiki-topics-jointly strings prob))
+        article-link (fn [[^Topic topic ^Position position]]
+                       (let [wapi-article (->wapi-article-cached topic)
+                             start (.getStart position)
+                             end (.getEnd position)]
+                         (->
+                          (wapi/->ArticleLink #_ string wapi-article
+                                              (.substring joint-string start end)
+                                              (.getWeight topic))
+                          (assoc :start start :end end))))]
+    (for [[string topic-pos] doc-topics]
+      (->> topic-pos
+           (map article-link)
+           resolve-collisions-as-wminer
+           wapi/select-max-strength))))
+
+(defn annotate-chunked
+  [snippets chunk-size & [prob]]
+  {:pre [(<= 1 chunk-size)]}
+  (println "chunked annotation")
+  (let [chunks (partition-all chunk-size snippets)]
+    (doall (mapcat #(annotate-jointly % prob) chunks))))
+
 (deftype WikiService []
   wapi/IWikiService
   (-annotate [this strings]
-    (let [->wapi-article-cached (comp (memoize mk-wapi-article) get-id)
-          joint-string (string/join ". " strings)
-          doc-topics (map vector strings (get-wiki-topics-jointly strings 5e-1))
-          ]
-      (for [;string strings
-            [string topics] doc-topics
-            ;^Topic topic (get-wiki-topics string 5e-2)
-            topic topics
-            :let [wapi-article (->wapi-article-cached topic)]
-            :when wapi-article
-            ^Position position (.getPositions topic)
-            :let [start (.getStart position)
-                  end (.getEnd position)]]
-        (->
-         (wapi/->DocArticleLink string wapi-article
-                                (.substring joint-string start end)
-                                (.getWeight topic))
-         (assoc :start start :end end)))))
+    (wapi/-annotate this strings 5e-1))
+  (-annotate [this strings prob]
+    (annotate-chunked strings 100 prob))
   (-relatedness [this article-pairs]
     (for [[a1 a2] article-pairs
           :let [wminer-a1 (->wminer-article a1)

@@ -1,0 +1,212 @@
+Statistics on the concepts mapped with simple title search method.
+| :nmapped | :nfailed |    :percent-mapped |
+|----------+----------+--------------------|
+|      646 |     1653 | 0.2809917355371901 |
+
+Concepts successfully mapped with the corrersponding most likely articles.
+|                                                         :concept |                                       :article |
+|------------------------------------------------------------------+------------------------------------------------|
+|                                       Metropolitan area networks |            Category:Metropolitan_area_networks |
+|                                                  Design patterns |              Category:Software_design_patterns |
+|                                              Simulated annealing |                            Simulated_annealing |
+|                                Single instruction, multiple data |                                           SIMD |
+|                                                       JavaScript |                                     JavaScript |
+|                                            Sorting and searching |                    Category:Sorting_algorithms |
+|                                               Computing literacy |                              Category:Literacy |
+|                                        Mixed / augmented reality |                         Category:Mixed_reality |
+|                                              Scripting languages |                   Category:Scripting_languages |
+|                                                 Proof complexity |                               Proof_complexity |
+|                                                          JAVA ME |                                       ESC/Java |
+|                                                        Jim Blinn |                                      Jim_Blinn |
+|                                        Digital rights management |             Category:Digital_rights_management |
+|                                                 Robotic autonomy |                               Autonomous_robot |
+|                                                 Network security |                                 Secure_Network |
+|                                             Molecular simulation |                            Molecular_modelling |
+|                                              Axiomatic semantics |                   Category:Axiomatic_semantics |
+|                                                     Social media |                                   Social_media |
+|                                                     Graph theory |                          Category:Graph_theory |
+|                        Computer and information systems training |                              Category:Training |
+|                                          Specification languages |                           Language_and_thought |
+|                                                  Process calculi |                       Category:Process_calculi |
+|                                              Non-volatile memory |                   Category:Non-volatile_memory |
+|                                          Computing organizations |                         Category:Organizations |
+|                             Software organization and properties |                              Category:Software |
+|                                          Interactive computation |                        Interactive_computation |
+|                                              Penetration testing |                               Penetration_test |
+|                                                     Technologies |                            Category:Technology |
+|                                           Distributed algorithms |                Category:Distributed_algorithms |
+|                                               Donald Ervin Knuth |                                   Donald_Knuth |
+|                                                 Mutual exclusion |                               Mutual_exclusion |
+|                                              Electronic commerce |                   Category:Electronic_commerce |
+|                                                   Social tagging |                            Category:Folksonomy |
+|                                                            Gmail |                                 Category:Gmail |
+|                                                   Language types |                Types_and_Programming_Languages |
+|                                                  Neural networks |                                 Neural_network |
+|                   Partially-observable Markov decision processes |   Partially_observable_Markov_decision_process |
+|                                                    Computability |                                  Computability |
+|                                         Scientific visualization |                       Scientific_visualization |
+|                                               Density estimation |               Category:Estimation_of_densities |
+|                                                 Separation logic |                               Separation_logic |
+|                                                 Action semantics |                               Action_semantics |
+|                                                    Touch screens |                          Category:Touchscreens |
+|                                                 Visual analytics |                               Visual_analytics |
+|                                                           Google |                                Category:Google |
+|                                                            CORBA |      Common_Object_Request_Broker_Architecture |
+|                                               Distributed memory |                             Distributed_memory |
+|                                                          PowerPC |                                        PowerPC |
+|                                               Gaussian processes |                               Gaussian_process |
+|                                         Computer algebra systems |              Category:Computer_algebra_systems |
+|                                           Static timing analysis |                         Static_timing_analysis |
+|                                                              X3D |                                            X3D |
+|                                                             Chat |                     Category:Instant_messaging |
+|                                    Command and control languages |                               Command_language |
+|                                                  Cloud computing |                       Category:Cloud_computing |
+|                             Pseudorandomness and derandomization |                      Category:Pseudorandomness |
+|                                                      Measurement |                           Category:Measurement |
+|                                                             VRML |                                           VRML |
+|                                                Real-time systems |                   Category:Real-time_computing |
+|                                                       Petri nets |                                      Petri_net |
+|                                                       Data scans |                                Full_table_scan |
+|                                                  Network domains |                          Category:Domain_names |
+| Philosophical/theoretical foundations of artificial intelligence | Category:Philosophy_of_artificial_intelligence |
+|                                                   Gestural input |                        Pointing_device_gesture |
+|                                                              Age |                                 Category:Aging |
+|                                             Quantum technologies |                             Quantum_technology |
+|                                                             iPad |                                  Category:IPad |
+|                                                    Functionality |                       Functional_specification |
+|                                                  Public Internet |                             Internet_of_Things |
+|                                                     Traceability |                                   Traceability |
+|                                                  Patient privacy |                                Virtual_patient |
+|                                               Linear programming |                    Category:Linear_programming |
+|                                            Heap (data structure) |               Category:Heaps_(data_structures) |
+|                                                    Organizations |                      Category:Go_organizations |
+|                                        Object oriented languages | Category:Object-oriented_programming_languages |
+|                                      Object oriented development |           Category:Object-oriented_programming |
+|                                          Network layer protocols |               Category:Network_layer_protocols |
+|                                                       SharePoint |                            Category:SharePoint |
+|                                                            Blogs |                                 Category:Blogs |
+|                                            Extremal graph theory |                 Category:Extremal_graph_theory |
+|                                                 Markov processes |                      Category:Markov_processes |
+|                                                    Temporal data |                              Temporal_database |
+|                                       Operating systems security |             Category:Operating_system_security |
+|                                                        Extranets |                                       Extranet |
+|                                                   Computer games |                             Category:Go_(game) |
+|                                             Ubiquitous computing |                           Ubiquitous_computing |
+|                                                  Reference works |                             Category:Reference |
+|                                           Cellular architectures |                          Cellular_architecture |
+|                               Massively multiplayer online games |    Category:Massively_multiplayer_online_games |
+|                                             Stochastic processes |                  Category:Stochastic_processes |
+|                                    Project management techniques |                         Project_management_2.0 |
+|                                           Latent variable models |                Category:Latent_variable_models |
+|                                                Quality assurance |                    Category:Quality_management |
+|                                       Buses and high-speed links |                                          D-Bus |
+|                                                Integral calculus |                     Category:Integral_calculus |
+|                                Centralization / decentralization |                                     DealCenter |
+|                                                       Flowcharts |                                      Flowchart |
+|                                              Dynamic programming |                            Dynamic_programming |
+|                                                      Enumeration |                                Enumerated_type |
+|                                                        Mirroring |                             Mirror_(computing) |
+
+Concepts that did not map.
+|                                          :concept |
+|---------------------------------------------------|
+|                             Social media networks |
+|                    Virtual University Enterprises |
+|                                           Solaris |
+|                            Mobile ad hoc networks |
+|                          Software defect analysis |
+|                                   Macro languages |
+|              Human Factors and Ergonomics Society |
+|       Accessibility design and evaluation methods |
+|           Development frameworks and environments |
+|                                               Men |
+|                                 Stream management |
+|                                Network management |
+|                                           Funding |
+|                     Interactive systems and tools |
+|                  Search with partial observations |
+|                                 Regular languages |
+|                              Bridges and switches |
+|                     Computational transcriptomics |
+|                           Agent / discrete models |
+|                                   Economic impact |
+|                                 Embedded hardware |
+|                                Description logics |
+|                              Operational analysis |
+|               Association for Computing Machinery |
+|                          Spatial-temporal systems |
+|                            Learning linear models |
+|                    Online handwriting recognition |
+|                                           Imaging |
+|                                         EIS, Inc. |
+|                           Semantics and reasoning |
+|                      Resource binding and sharing |
+|        Courant Institute of Mathematical Sciences |
+|                             Surveys and overviews |
+|                                   Network on chip |
+|                                  Network dynamics |
+|                        Boolean algebra algorithms |
+|              Hardware attacks and countermeasures |
+|                                    Topic modeling |
+|                                Assertion checking |
+|                 Federal Communications Commission |
+|                               Automata extensions |
+|                                       Beamforming |
+|            Extraction, transformation and loading |
+|                            Interactive simulation |
+|                                       Jackknifing |
+|                                    Power networks |
+|                       Transient errors and upsets |
+|                                          Genomics |
+|                          DNS (Domain Name System) |
+|                    Reconfigurable logic and FPGAs |
+|                              Retrieval efficiency |
+|                               History of hardware |
+|                                   Alan Curtis Kay |
+|                           Supply chain management |
+|                    Constraint and logic languages |
+|                                       Forecasting |
+|                               Storage replication |
+|                                             Excel |
+|                        Package-level interconnect |
+|           Lower bounds and information complexity |
+|                               Professional topics |
+|                                    Database views |
+|                                           Patents |
+|            Structure and multilingual text search |
+|                                        Siemens AG |
+|                     Real-time system architecture |
+|                                           Pentium |
+|            Social aspects of security and privacy |
+|                      Software development methods |
+|               Social network security and privacy |
+|                                              IPv6 |
+|                     Aging of circuits and systems |
+|                      Timing analysis and sign-off |
+|                           Probabilistic reasoning |
+|         Management and querying of encrypted data |
+|                        Soft intellectual property |
+| Ubiquitous and mobile computing systems and tools |
+|                                           CD-ROMs |
+|                      Sensor devices and platforms |
+|                    Malicious design modifications |
+|                         Capability Maturity Model |
+|                                 Secondary storage |
+|                                        Evaluation |
+|                              Data center networks |
+|                                      Linear logic |
+|                   Hypertext / hypermedia creation |
+|         Analog and mixed-signal circuit synthesis |
+|                              Perceptron algorithm |
+|                          Inductive logic learning |
+|                                      Flash memory |
+|                             Methodologies for EDA |
+|                                     OSGi Alliance |
+|                                          Genetics |
+|                                 Network economics |
+|                             System administration |
+|                               Federated databases |
+|                                     Ernst & Young |
+|                           Combinational synthesis |
+|                              Directory structures |
+|                                 Technology audits |    

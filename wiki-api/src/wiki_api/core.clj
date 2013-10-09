@@ -11,16 +11,30 @@
 ;;   String
 ;;   (doc-string [this] this))
 
-(defrecord Article [id title])
+;; (defrecord Article [id title])
 
-(defrecord Category [id title])
+(defn mk-article [id title]
+  {:id id
+   :title title
+   :type ::article})
 
-(defrecord DocArticleLink [doc article fragment strength])
+(defn mk-category [id title]
+  {:id id
+   :title title
+   :type ::category})
+
+(def article? (comp (partial = ::article) :type))
+
+(def category? (comp (partial = ::category) :type))
+
+;; (defrecord Category [id title])
+
+(defrecord ArticleLink [article fragment strength])
 
 ;; (defrecord ArticleRel [articles strength])
 
 (defprotocol IWikiService
-  (-annotate [this strings])
+  (-annotate [this strings] [this strings prob])
   (-relatedness [this article-pairs])
   (-article-categories [this article])
   (-cat-relations [this categories])
@@ -47,7 +61,8 @@
 (defn select-max-strength [links]
   (let [sort-fn #(sort-by (comp - :strength) %)]
     (->> links
-      (group-by (juxt :article :doc))
+      (group-by :article)
       (u/map-val sort-fn)
       (u/map-val first)
-      vals)))
+      vals
+      (sort-by :start))))

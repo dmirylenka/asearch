@@ -1,0 +1,212 @@
+Statistics on the concepts mapped with simple title search method.
+| :nmapped | :nfailed |    :percent-mapped |
+|----------+----------+--------------------|
+|      425 |     1874 | 0.1848629839060461 |
+
+Concepts successfully mapped with the corrersponding most likely articles.
+|                                           :concept |                                             :label |                                  :article |
+|----------------------------------------------------+----------------------------------------------------+-------------------------------------------|
+|                                Transport protocols |                                Transport protocols |                                    TCP/IP |
+|                               Ubiquitous computing |                               Ubiquitous computing |                      Ubiquitous_computing |
+|                                 Numerical analysis |                                 Numerical analysis |                        Numerical_analysis |
+|                                       Web services |                                       Web services |                              Web_services |
+|                                    Energy metering |                                    Energy metering |                        Energy_measurement |
+|                                       Interpreters |                                       Interpreters |                              Interpreters |
+|                                    Data warehouses |                                    Data warehouses |                          Data_warehousing |
+|                       Mobile and wireless security |                       Mobile and wireless security |                           Mobile_security |
+|                 Enterprise architecture frameworks |                 Enterprise architecture frameworks |        Enterprise_architecture_frameworks |
+|                  Physical sciences and engineering |                  Physical sciences and engineering |                  Computer_physics_engines |
+|       Logic programming and answer set programming |       Logic programming and answer set programming |                         Logic_programming |
+|                                        Type theory |                                        Type theory |                               Type_theory |
+|                                  Robust regression |                                  Robust regression |                         Robust_regression |
+|                           Computer algebra systems |                           Computer algebra systems |                  Computer_algebra_systems |
+|                                           Robotics |                                           Robotics |                         Years_in_robotics |
+|                                            Twitter |                                            Twitter |                                   Twitter |
+|                                         Smart grid |                                         Smart grid |                                Smart_grid |
+|                                             iPhone |                                             iPhone |                                    IPhone |
+|                     Software testing and debugging |                     Software testing and debugging |                          Software_testing |
+|                             Latent variable models |                             Latent variable models |                    Latent_variable_models |
+|                                  Network structure |                                  Network structure |                          Network_topology |
+|                             Differential equations |                             Differential equations |                    Differential_equations |
+|                                          Semantics |                                          Semantics |                                 Semantics |
+|                                 Software evolution |                                 Software evolution |                                 Evolution |
+|                               Statistical software |                               Statistical software |                      Statistical_software |
+|                            Support vector machines |                            Support vector machines |                   Support_vector_machines |
+|                                      Hardware test |                                      Hardware test |                          Hardware_testing |
+|                                     Grid computing |                                     Grid computing |                            Grid_computing |
+|                                 Designing software |                                 Designing software |                           Software_design |
+|                                Multi-agent systems |                                Multi-agent systems |                       Multi-agent_systems |
+|                                              Gmail |                                              Gmail |                                     Gmail |
+|                                           Avionics |                                           Avionics |                                  Avionics |
+|                                            Metrics |                                            Metrics |                                   Metrics |
+|                                    Neural networks |                                    Neural networks |                           Neural_networks |
+|                         Quantum information theory |                         Quantum information theory |                Quantum_information_theory |
+|                                        Adolescents |                                        Adolescents |                               Adolescence |
+|                               Displays and imagers |                               Displays and imagers |                           Display_devices |
+|               Testing, certification and licensing |               Testing, certification and licensing |                    Language_certification |
+|                                    Fault tolerance |                                    Fault tolerance |                           Fault_tolerance |
+|                       Computing education programs |                       Computing education programs |                      Educational_programs |
+|                                      Documentation |                                      Documentation |                                 Documents |
+|                                 Complexity classes |                                 Complexity classes |                        Complexity_classes |
+|                                Recommender systems |                                Recommender systems |                       Recommender_systems |
+|                                      Organizations |                                      Organizations |                          Go_organizations |
+|                           British Computer Society |                           British Computer Society |                  British_Computer_Society |
+|                                  Backup procedures |                                  Backup procedures |                           Computer_backup |
+| Translator writing systems and compiler generators | Translator writing systems and compiler generators |                         Parser_generators |
+|                       Computational control theory |                       Computational control theory |                            Control_theory |
+|                 Architecture description languages |                 Architecture description languages |         Architecture_description_language |
+|                                      Random graphs |                                      Random graphs |                             Random_graphs |
+|                                              Trees |                                              Trees |                                     Trees |
+|                                     Graph coloring |                                     Graph coloring |                            Graph_coloring |
+|                                 Information theory |                                 Information theory |                        Information_theory |
+|                                      Combinatorics |                                      Combinatorics |                             Combinatorics |
+|                Software libraries and repositories |                Software libraries and repositories |                  Software_by_library_used |
+|                           Enterprise architectures |                           Enterprise architectures |                   Enterprise_architecture |
+|                          Mathematical optimization |                          Mathematical optimization |                     Software_optimization |
+|                                 Computing literacy |                                 Computing literacy |                                  Literacy |
+|                                 Web search engines |                                 Web search engines |                   Internet_search_engines |
+|                                              CORBA |                                              CORBA | Common_Object_Request_Broker_Architecture |
+|                                    Adult education |                                    Adult education |                           Adult_education |
+|                                 Assembly languages |                                 Assembly languages |                        Assembly_languages |
+|                           Constructive mathematics |                           Constructive mathematics |                            Constructivism |
+|                                            NetWare |                                            NetWare |                            Novell_NetWare |
+|     Integrated and visual development environments |     Integrated and visual development environments |       Integrated_development_environments |
+|                                           Tracking |                                           Tracking |                                  Tracking |
+|                 Enterprise application integration |                 Enterprise application integration |        Enterprise_application_integration |
+|                   Human computer interaction (HCI) |                   Human computer interaction (HCI) |        Human%E2%80%93computer_interaction |
+|                      National Institutes of Health |                      National Institutes of Health |             National_Institutes_of_Health |
+|                        Web and social media search |                        Web and social media search |                           Internet_search |
+|                                    Noise reduction |                                    Noise reduction |                           Noise_reduction |
+|                                   Machine learning |                                   Machine learning |                          Machine_learning |
+|                                  Programming logic |                                  Programming logic |                         Logic_programming |
+|                                  Graph enumeration |                                  Graph enumeration |                         Graph_enumeration |
+|                                History of software |                                History of software |                             History_of_go |
+|                   Constraint and logic programming |                   Constraint and logic programming |                    Constraint_programming |
+|                             Parallel architectures |                             Parallel architectures |                        Parallel_computing |
+|                  Stochastic differential equations |                  Stochastic differential equations |         Stochastic_differential_equations |
+|               Pseudorandomness and derandomization |               Pseudorandomness and derandomization |                          Pseudorandomness |
+|                            Modeling and simulation |                            Modeling and simulation |                   Modeling_and_simulation |
+|                                           Patterns |                                           Patterns |                                  Patterns |
+|                                Convex optimization |                                Convex optimization |                       Convex_optimization |
+|                               History of computing |                               History of computing |               History_of_computer_science |
+|                                             Design |                                             Design |                                    Design |
+|                      Optical character recognition |                      Optical character recognition |             Optical_character_recognition |
+|                             Record storage systems |                             Record storage systems |          Distributed_data_storage_systems |
+|                                           Firmware |                                           Firmware |                                  Firmware |
+|                          Domain specific languages |                          Domain specific languages |     Domain-specific_programming_languages |
+|                                   Tablet computers |                                   Tablet computers |                          Tablet_computers |
+|                                     Virtual memory |                                     Virtual memory |                            Virtual_memory |
+|                                       Data centers |                                       Data centers |                              Data_centers |
+|                              Business intelligence |                              Business intelligence |                     Business_intelligence |
+|                                Cloud based storage |                                Cloud based storage |                             Cloud_storage |
+|                               Ambient intelligence |                               Ambient intelligence |                      Ambient_intelligence |
+|                                Abstract data types |                                Abstract data types |                       Abstract_data_types |
+|                                Operations research |                                Operations research |                        Management_science |
+|                                Interaction devices |                                Interaction devices |                             Input_methods |
+|                                 Linear programming |                                 Linear programming |                        Linear_programming |
+|                                    Rewrite systems |                                    Rewrite systems |                         Rewriting_systems |
+|                                Axiomatic semantics |                                Axiomatic semantics |                       Axiomatic_semantics |
+
+Concepts that did not map.
+|                                                          :concept |
+|-------------------------------------------------------------------|
+|                                  Joint Photographic Experts Group |
+|                                                        Redundancy |
+|                                                          Monitors |
+|                                                            Inodes |
+|                                      Interface design prototyping |
+|                                          Software defect analysis |
+|                                             Cross-layer protocols |
+|                                                          Jim Gray |
+|                                       Statistical timing analysis |
+|                                               Storage replication |
+|                                                             Trust |
+|                                                   Online shopping |
+|                                  American Statistical Association |
+|                                                Acceptance testing |
+|                                                  Cognitive radios |
+|                                                         Extranets |
+|                                            Sketching and sampling |
+|                                    Mediators and data integration |
+|                                            Best practices for EDA |
+|                                               Supervised learning |
+|                                                Program constructs |
+|                                                 Censoring filters |
+|                            Sequencing and genotyping technologies |
+|                                  Information technology education |
+|                             Differential variational inequalities |
+|                                           Timed and hybrid models |
+|                                              Jay Wright Forrester |
+|                                    Voting / election technologies |
+|                                                     Factor graphs |
+|                                           User interface toolkits |
+|                                         Embedded systems security |
+|                          Application specific integrated circuits |
+|                                                 Source separation |
+|                                               Network data models |
+|                                                 Dynamic compilers |
+|                                               Token ring networks |
+|                                        Real-time systems software |
+|                       Sample complexity and generalization bounds |
+|                                                       Task models |
+|                                         Space-based architectures |
+|                                                 Language features |
+|                             Collaboration in software development |
+|                                                      Linear logic |
+|                               Parametric curve and surface models |
+|                                                    Dynamic memory |
+|                                      Network performance analysis |
+|                                            Network topology types |
+|                                   Hierarchical storage management |
+| Collaborative and social computing theory, concepts and paradigms |
+|                                                   David Patterson |
+|                                   Ordinary differential equations |
+|                               Cooperating communicating processes |
+|                                                Intermediate nodes |
+|                                                      Spreadsheets |
+|                                                Algebraic topology |
+|                                               Synchronous editors |
+|                                     Information science education |
+|                          Systems and tools for interaction design |
+|                                      Algorithmic mechanism design |
+|                                                 Corel Corporation |
+|                        Generating random combinatorial structures |
+|                                                        Siemens AG |
+|                                                      Completeness |
+|                                                Eclipse Foundation |
+|                                                         Accenture |
+|                                                    Query planning |
+|                                                        Assertions |
+|                                               Variational methods |
+|                                                              PARC |
+|                                                  Hyperbolic trees |
+|                                                   Oracle Database |
+|                               Wireless integrated network sensors |
+|                              Software verification and validation |
+|                                    Virtual University Enterprises |
+|                                                             MODIS |
+|                                          Import / export controls |
+|                                                 Historical people |
+|                                 Supervised learning by regression |
+|                                                 Equational models |
+|                                                  Systems security |
+|                                          Empirical studies in HCI |
+|                                 Design and analysis of algorithms |
+|                                                       Yahoo! Inc. |
+|                                                       Correctness |
+|                                             Claude Elwood Shannon |
+|                                    Los Alamos National Laboratory |
+|                                                Gaussian processes |
+|                                                    Answer ranking |
+|                                           Continuous space search |
+|                               Business process management systems |
+|                                                      Video search |
+|                                            Retargetable compilers |
+|                                                            LAPACK |
+|                                                 Anomaly detection |
+|                                          Vulnerability management |
+|                                    Switching devices power issues |
+|                                                 Image composition |
+|                                 Federal Communications Commission |
+|                                                 Embedded software |
+|                                                          Taxation |

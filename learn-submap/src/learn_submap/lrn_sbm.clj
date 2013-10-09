@@ -3,20 +3,26 @@
                      [set :as set]]
             [clojure.java [io :as io]]
             [utils.core :as u]
+            [search-api.search-api :as sapi]
             [mas-api.core :as mas]
+            [arxiv-api.core :as arxiv]
+            [arnetminer.dataset :as aminer]
             [topic-maps.core :as tmaps]
             [topic-maps.features :as ftr]
             [wiki-api.core :as wapi]
             [graphs.core :as g]
             [seq-learn.core :as sl]
-            [seq-learn.dagger :as da])
-  (:import [topic_maps.core ITopic]))
+            [seq-learn.dagger :as da]))
 
 (defn new-app [& {:keys [] :as opt}]
   {:conf (-> {:input-data-dir "./resources/data/"
               :features [
 #_                   ftr/n-links 
-                      ftr/avg-pairwise-dist ; 1
+;; NOTE: replaced average pairwise distance with the dumb feature
+;;       because of the performance reasons
+;; TODO: reimplement avg-pairwise-dist efficently
+#_                      ftr/avg-pairwise-dist ; 1
+#_                      ftr/always-one
                       ftr/n-connected ; 2
                       ftr/paper-coverage ; 3
                       ftr/direct-doc-coverage ; 4
@@ -44,23 +50,22 @@
                "quadratic programming" "numerical differential equations"
                "graph algorithms"]}})
 
-;; example data type for representing documets used in the topic maps
-(defrecord Paper [id title])
-
-(extend-type Paper
-  tmaps/IDocument
-    (doc-id [this] (str (:title this)" " (:year this) " " (doall (string/join ", " (map :last-name (:author this))))))
-  wapi/IDocument
-    (doc-string [this] (str (:title this) ". " (:abstract this))))
-
 (defn input-file-name [conf query] (str (conf :input-data-dir) query ".in.clj"))
 
 (defn output-file-name [conf query] (str (conf :input-data-dir) query ".out.clj"))
 
+(defn mk-paper [{:keys [id author title abstract year] :as paper}]
+  (let [doc-id (str title " " year " " (doall (string/join ", " (map #(str (:first-name %) " " (:last-name %)) author))))
+        doc-string (str title ". " abstract)]
+    (-> paper
+        (assoc :doc-id doc-id
+               :string doc-string))))
+
 (defn fetch-store-input [conf query]
-  (let [search (mas/search-papers query :end 100 :timeout 30000)
+  (let [search (sapi/search-papers aminer/service query :end 100 :timeout 30000)
         _ (when (u/fail? search) (throw (Exception. (pr-str (:error search)))))
         mk-doc (conf :mk-doc)
+        _ (when (nil? mk-doc) (throw (Exception. "Nil :mk-doc parameter")))
         papers (map mk-doc (:value search))
         topic-map (tmaps/prepare-map papers)]
     (spit (input-file-name conf query) (pr-str topic-map))))
@@ -103,16 +108,9 @@
     (compute-features [this new-topic]
       (mapv #(%1 topic-map submap %2 new-topic) features feature-vals)))
 
-;; A topic (Topic) is an action (IAction) that transforms an intermediate summary graph
-;; into a bigger graph containing the topic.
-;; (extend-type ITopic sl/IAction
-;; (action-name [this] (:title this)))
-
-(extend-protocol sl/IAction
-  wiki_api.core.Article
-  (action-name [this] (:title this))
-  wiki_api.core.Category
-  (action-name [this] (:title this)))
+;; (extend-protocol sl/IAction
+;;   clojure.lang.IPersistentMap
+;;   (action-name [this] (:title this)))
 
 (defn empty-submap [topic-map features]
   (let [submap (tmaps/submap topic-map [] :keep [:main-topic])]
@@ -121,12 +119,6 @@
                   nil
                   features
                   (mapv #(%1 topic-map) features))))
-
-
-;; (defrecord StateLoss [loss-fn]
-;;   da/IStateLoss
-;;   (compute-state-loss [this state1 state2]
-;;     (loss-fn state1 state2)))
 
 ;; Loss function used for comparing actions to the expert action.
 (defrecord ActionLoss [loss-fn]
@@ -144,8 +136,6 @@
 (defn zero-one [a b] (if (= a b) 0 1))
 
 (def action-loss-01 (ActionLoss. (fn [state action1 action2] (zero-one action1 action2))))
-
-;; (def state-loss-01 (StateLoss. (fn [state1 state2] (zero-one state1 state2))))
 
 (defn match-score
   "Computes the 'similarity' metween two topic sequences by greedily assigning
@@ -294,7 +284,7 @@
     (println "Predicted sequence:" (map :title predicted-seq))
  #_ (tmaps/display-topics topic-map)
  #_ (tmaps/display-topics (tmaps/submap topic-map optimal-seq))
- #_ (tmaps/display-topics (tmaps/submap topic-map predicted-seq))))
+ (tmaps/display-topics (tmaps/submap topic-map predicted-seq))))
 
 ;; (defn assess-baseline [query features]
 ;;   (let [[init-state optimal-seq] (read-ground-truth query features)
@@ -327,4 +317,8 @@
         submap (tmaps/submap topic-map topics)]
     (tmaps/display-topics submap)))
 
-(defn -main [])
+(defn -main []
+  (let [app (new-app :input-data-dir "./resources/data-aminer-wminer-2013-10-07/" :mk-doc mk-paper)
+        conf (:conf app)
+        queries (:queries (:data app))]
+    (train-dagger conf queries 8 10)))

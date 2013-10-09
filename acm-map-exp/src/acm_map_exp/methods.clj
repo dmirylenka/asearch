@@ -15,7 +15,7 @@
   ^{:type ::wiki-link}
    {:label label :article article})
 
-;; :concept -> seq[:simple-mapping]
+;; :concept -> seq[::wiki-link]
 (defn map2wiki*
   "Maps the concept to Wikipedia articles by resolving its preferred and
    alternative titles as anchor texts in inter-article links. Returns the
@@ -32,3 +32,4 @@
 (defn map2wiki [concept & {:as opt}]
   "Same as map2wiki* but with variadic options."
   (map2wiki* concept opt))
+
