@@ -59,9 +59,9 @@
   (predict-ranking [this rankings]
     (let [input-file (temp-file "test")
           output-file (temp-file "predict")
-    ;     _ (println (path model-file))
-    ;     _ (println (path input-file))
-    ;     _ (println (path output-file))
+         _ (println (path model-file))
+         _ (println (path input-file))
+         _ (println (path output-file))
           input-file (write-file! rankings input-file)
           output-file (run-svm-predict! input-file output-file model-file)
           rank-values (->> output-file slurp (#(string/split % #"\n")) (map #(Double/parseDouble %)))]
@@ -69,13 +69,16 @@
   (save-model [this file-name]
     (io/copy (io/file model-file) (io/file file-name))))
 
-(defn load-model [file]
-  (Model. (io/file file)))
+(defn load-model [file-name]
+  (let [file (io/file file-name)]
+    (when-not (.exists file)
+      (throw (java.io.FileNotFoundException. file-name)))
+    (Model. file)))
 
 (defn train-model [ranking & {:as opt}]
   (let [input-file (or (io/file (:input-file opt)) (temp-file "train"))
         model-file (or (io/file (:model-file opt)) (temp-file "model"))
-    ;   _ (println (path input-file))
+        _ (println (path input-file))
         _ (println (path model-file))
         input-file (write-file! ranking input-file)
 ;       _ (println "Input file for training SVM is written.")

@@ -1,0 +1,283 @@
+div {
+        margin:0;
+}
+
+.clear {
+        clear:both;
+}
+
+#whole-thing {
+        width:1020px;
+        margin:0 auto;
+}
+
+#header {
+        height:60px;
+        text-align:center;
+        padding-top:20px;
+        margin-bottom: 10px;
+}
+
+#logo {
+        background:#ffffff;
+        width: 500px;
+        margin:auto;
+}
+
+#logo-scien, #logo-scan {
+        display:inline;
+        font: 100% Arial, Helvetica, sans-serif;
+        font-size: 50px;
+        height: 50px;
+        font-weight: bold;
+        margin:0px;
+        padding:0px;
+}
+
+#logo-scien {
+        color:#BB0000;
+}
+
+
+#subtitle {
+        position:relative;
+        top:-10px;
+        font: 100% Arial, Helvetica, sans-serif;
+        font-size: 13px;
+        font-weight: bold;
+        margin:0px;
+        padding:0px;
+        color:#AA2222;
+}
+
+#menu {
+        position:relative;
+        top:-10px;
+}
+
+.menu-link {
+   margin: 0px 5px;
+}
+
+#left {
+        float:left;
+        width:0px;
+}
+
+#center {
+        float:left;
+        width:960px;
+        padding:10px;
+}
+
+#right {
+        float:left;
+        width:0px;
+}
+
+#footer {
+        text-align: center;
+        clear:both;
+}
+
+.search-controls {
+        margin:10px;
+        text-align:center;
+}
+
+.search-bar {
+        display:table;
+        padding:0px;
+        margin:0px auto;
+}
+
+.search-box {
+        display:table-cell;
+        padding: 0px;
+        padding-left: 5px;
+        margin:0px;
+        height:30px;
+        width:570px;
+        font-size:21px;
+}
+
+.search-button {
+        display:table-cell;
+        padding:0px;
+        margin:0px;
+}
+
+.search-bar .search-button, .search-bar .search-box {
+        vertical-align:bottom;
+}
+
+.search-bar {
+        text-align:left;
+}
+
+#type-invitation {
+        font: 100% Arial, Helvetica, sans-serif;
+        color:grey;
+}
+
+.topic-controls {
+        width:100%;
+        float:left;
+        margin:10px;
+        white-space:nowrap;
+}
+
+#slider-title {
+        font: 100% Arial, Helvetica, sans-serif;
+        color:grey;
+        margin-bottom:5px;
+        text-align:center;
+}
+
+#slider-bar {
+        text-align:center;
+}
+
+#show-more, #show-less {
+        font: 100% Arial, Helvetica, sans-serif;
+        color:black;
+        width: 50px;
+        cursor: pointer;
+}
+
+#show-less {
+        margin-right:10px;
+        float:left;
+}
+
+#show-more {
+        margin-left:20px;
+        float:right;
+}
+
+#minFreqSlider {
+        float:left;
+        width:816px;
+        height:10px;
+        margin-left:10px;
+}
+
+.topic-graph {
+        margin-left:22px;
+        clear:both;
+}
+
+#topic-graph g .node {
+        cursor:pointer;
+}
+
+.included {
+        fill:#ffaa00;
+}
+
+#click-invitation {
+        text-align: center;
+        font: 100% Arial, Helvetica, sans-serif;
+        color:grey;
+}
+
+#result-section {
+        margin:10px;
+}
+
+.result-title, .graph-title {
+        width:100%;
+        display:table;
+        background:#eeeeee;
+        font-size: 21px;
+        padding:0px 0px 0px 10px;
+        margin-bottom: 10px;
+}
+
+.result-title p, .graph-title p { 
+        display: table-cell;
+        vertical-align:middle;
+}
+
+
+.result-title-query {
+        color:#AA2222;
+}
+
+.result-title-topic {
+        font-weight:bold;
+        color:orange;
+}
+
+.result-section {
+        width:100%;
+        padding:5px;
+}
+
+.show-hide-pages, .show-all {
+   float:right;
+   width:200px;
+   height: 40px;
+   font-size:16px;
+}
+
+.show-all .active {
+   width:10px;
+}
+
+.show-all .inactive {
+   width:50px;
+}
+
+ul {
+  margin-top:15px
+}
+
+.about-title, .about-link {
+   font: 100% Arial, Helvetica, sans-serif;
+   font-size: 18px;
+}
+
+.about-title {
+   padding: 3px 5px;
+   margin-top:20px;
+   background:#eeeeff;
+}
+
+#about-content {
+   background:#fbfbff;
+}
+
+.about-link {
+   display:block;
+   margin: 5px;
+}
+
+.about-text {
+   font-size: 18px;
+   margin: 8px;
+}
+
+.scienscan {
+   font: 100% Arial, Helvetica, sans-serif;
+   font-weight: bold;
+   border-bottom:3px solid #AA2222;
+   font-size: 16px;
+}
+
+.scien {
+  color:#BB0000;
+}
+
+.scan {
+   color:#000000;
+}
+
+#sorry {
+        font: 100% Arial, Helvetica, sans-serif;
+        color:red;
+        font-weight:bold;
+        font-size:20px;
+        margin-bottom:5px;
+        text-align:center;
+}

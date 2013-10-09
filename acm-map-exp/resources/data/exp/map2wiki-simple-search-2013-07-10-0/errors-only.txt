@@ -1,0 +1,154 @@
+Concepts that mapped to Wikipedia articles (with the simple algorithm of resolving the whole concept labels as Wikipedia article labels)
+|                                             :concept |                    :label |                       :article |  comment / reason
+|------------------------------------------------------+---------------------------+--------------------------------|------------------
+|                  Embedded and cyber-physical systems |         embedded computer |                Embedded system | ~ two articles
+|                            Mixed / augmented reality |         augmented reality |              Augmented reality | ~ two articles
+|            Symmetric cryptography and hash functions |    symmetric cryptography |        Symmetric-key algorithm | ~ two articles
+|  Nonmonotonic, default reasoning and belief revision |        nonmonotonic logic |            Non-monotonic logic | ~ two articles
+|                            Modal and temporal logics |               modal logic |                    Modal logic | ~ two articles
+|                  Stochastic control and optimization |   stochastic optimization |        Stochastic optimization | ~ two articles
+|                          Web and social media search |           internet search |              Web search engine | ~ two articles; no article
+|             Computing standards, RFCs and guidelines |        industry standards |             Technical standard | ~ two articles; no article
+|              Development frameworks and environments |     development framework |             Software framework | ~ no article
+|                                 Deep belief networks |           deep belief net |   Restricted Boltzmann machine | ~ no article
+|                                    Document scanning |         Document scanning |                  Image scanner | ~ no article
+|                           Geographic characteristics |         geographic origin | List of wine-producing regions | - no article; ambiguous
+|                   Computing Accreditation Commission |                       cac |  Royal Canadian Armoured Corps | - no article; abbrev. alt label
+|                  Computing most probable explanation |                       mpe | HP Multi-Programming Executive | - no article; abbrev. alt label
+|               Interaction design process and methods |                       ixd |              Allahabad Airport | - no article (too specific); abbrev. alt label
+|                         Computer-managed instruction |                       cmi |  Carmelites of Mary Immaculate | - no article (too specific); abbrev. alt label
+|                         National Academy of Sciences |                       nas |                            Nas | - abbrev. alt label
+|                                  SAS Institute, Inc. |                       sas |            Special Air Service | - abbrev. alt label
+|                                  Energy distribution |       Energy distribution |   Spectral energy distribution | - ambiguous
+|                                            Keyboards |                 Keyboards |            Keyboard instrument | - ambiguous
+|                                          Performance |               Performance |                    Performance | - ambiguous; general label
+|               Content analysis and feature selection |          content analysis |               Content analysis | - ambiguous; two articles; no article
+|                                      Ad hoc networks |           Ad hoc networks |          Mobile ad hoc network | ~ ambiguous
+|                                     Power and energy |          energy and power |                Energy in Japan | / too many problems
+|                                     Graph algorithms |  algorithmic graph theory |                   Graph theory | + category matches better
+
+Summary:
+Of 100 mapped articles:
+    75 mapped perfectly
+    25 with mistakes
+      12 ambiguous
+        4 abbrev. alt label
+      10 no article
+        2 too specific
+       9 two articles
+       1 too many problems
+       1 category matches better
+    
+Concepts that did not map.
+|                                                       :concept | comment/reason and most likely best match
+|----------------------------------------------------------------|-------------------------------------------
+|                                      Network design principles | no page; too specific; "Computer network"
+|                                HCI theory, concepts and models | no page; too specific; "HCI"
+|                                       Computational proteomics | no page; too specific; "Proteomics"
+|                                         Age-based restrictions | no page; too specific; "Network access control"
+|                               Causal reasoning and diagnostics | no page; too specific; "Automated reasoning"?
+|                                  Empirical software validation | no page; too specific; "Verification and validation (software)"
+|                                        Combinational synthesis | no page; too specific; "Combinatorial chemistry"?
+|                                         Logic and verification | no page; too specific? "Formal verification"
+|            Analysis and design of emerging devices and systems | no page; too specific; "Emerging technologies"
+|                                   Distributed systems security | no page; too specific; "Computer security"
+|                              Application-specific VLSI designs | no page; too specific; "Very-large-scale integration"
+|                                       Investigation techniques | no page; too specific; "Computer forensics" "Digital forensic process"
+|                                       Self-checking mechanisms | no page; too specific; "Fault-tolerant system"
+|                    Visual content-based indexing and retrieval | no page; too specific; two pages: "Visual search engine" "Content-based image retrieval"
+|                        Theory of database privacy and security | no page; too specific; two pages: "Database security" "Information privacy"
+|                               Information-theoretic techniques | no page; too specific (in fact, refers to "information theoretic techniques in cryptography")
+|                   Information accountability and usage control | no page ? too specific ; "Database security"
+|                                          Quantitative automata | no page ?; too specific
+|                                                Query operators | no page; "SQL" "Database" "Relational algebra"
+|                                    Extra-functional properties | no page; a collection of articles
+|                             Probabilistic reasoning algorithms | no page; a collection of articles or "Probability theory"
+|                                   System description languages | no page; "Specification languages"
+|                                             Document filtering | no page; "Information filtering system" "Collaborative filtering" "Recommender systems"
+|                                    Multimedia content creation | no page; "Multimedia"
+|                                                  Network games | no page; "Video game" "Social network game"
+|                                      Database query processing | no page; "Databases" "Query optimization"
+|                                      Programmable interconnect | no page; "Field-programmable gate array"?
+|                                       Bio-embedded electronics | no page; "Bioelectronics" "Implant (medicine)"
+|                                   Government technology policy | no page; "Technology policy"
+|                                Hypertext / hypermedia creation | no page; "Hypertext" "Hypermedia"
+|                                          Object identification | no page; category "Object recognition and categorization", "Object detection" 
+|                                                Motif discovery | no page; "Unsupervised learning" or biology-specific "Sequence motif"
+|                                          Metallic interconnect | no page ? ; "Copper interconnect"
+|                      Radio frequency and wireless interconnect | no page ? ;
+|                                            Predecessor queries | no page ?
+|                   Recognition of genes and regulatory elements | no page ?
+|                                            Rounding techniques | no good label; "Rounding"
+|                                     Peer-to-peer architectures | no good label; "Peer-to-peer"
+|                                  Tightly coupled architectures | no good label; "Tightly coupled system"
+|                                             Multiscale systems | no good label; "Multiscale modeling"
+|                                           Relevance assessment | no good label; "Relevance (information retrieval)"
+|                                    Network access restrictions | no good label; "Network access control"
+|                                       Architecture (buildings) | no good label; complex concept label; "Architecture"
+|                                           Storage class memory | no good label; "Non-volatile memory"
+|                                   Health information exchanges | no good label; "Health information exchange"
+|                                          Computing occupations | category "Computer occupations"
+|                                   Computing education programs | category "Computer science education"
+|                                             Program constructs | category "Programming constructs"
+|                           Unsupervised learning and clustering | two pages; "Unsupervised learning" "Clustering"
+|                                                 Document types | general and reference
+|                      VLSI system specification and constraints |
+|                     Learning in probabilistic graphical models |
+|                              Specialized information retrieval |
+|                                        Block / page strategies |
+|                                        Semantics and reasoning |
+|                                Theorem proving and SAT solving |
+|                                               Project staffing |
+|                                              Access protection |
+|                                              Search interfaces |
+|                  Publish-subscribe / event-based architectures |
+|                              Interactive learning environments |
+|                                            Format and notation |
+|                                     Theorem proving algorithms |
+|                                      High-speed input / output |
+|                                               Systems planning | 
+|                                   Hierarchical representations |
+|                                        Point-to-point networks |
+|                                      Automated static analysis |
+|                               Markov-chain Monte Carlo methods |
+|                                          Personal Robots Group |
+|                                                Content ranking |
+|                                              Image composition |
+|                                       Memory and dense storage |
+|                                    Yield and cost optimization |
+|                                Abstraction and micro-operators |
+|                                                    Zilog, Inc. |
+|                                           Column based storage |
+|                              Semi-supervised learning settings |
+|                              Special-purpose algebraic systems |
+|                                         Best practices for EDA |
+|                                       Computer vision problems |
+|                          Post-manufacture validation and debug |
+|                                     Computer science education |
+|                                             SIMD architectures |
+|                              Physical sciences and engineering |
+|                               Emerging tools and methodologies |
+|                 Enterprise level and data centers power issues |
+| Ubiquitous and mobile computing theory, concepts and paradigms |
+|                                          General and reference |
+|                                              Program reasoning |
+|                                  Real-time system architecture |
+|                                        Chip-level power issues |
+|                                          Storage architectures |
+|                                               Robotic planning |
+|                                 Multimedia information systems |
+|                                    Database constraints theory |
+|                                                Type structures |
+|                                   Symbolic calculus algorithms |
+|                                          Web protocol security |
+|                                                 Answer ranking |
+
+Summary:
+Of 50 concepts that did not map
+   36 = 72% no page in Wikipedia
+     18 = 36% too specific
+      6 - not sure / couldn't find best match
+    9 = 18% no good label
+    3 = 6% category
+    1 = 2% two pages
+    1 = 2% general and reference

@@ -28,14 +28,15 @@
     state-seq))
 
 (defn- iterate-dagger [init-states opt-policy seq-length loss {:keys [dataset current-policy evaluate]}]
- ; (println "!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NEW ITERATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+  (println "!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NEW ITERATION !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
   (let [states (mapcat #(compute-state-seq % current-policy seq-length) init-states)
-        new-states  states 
+        new-states states 
           ;(remove (set (map first dataset)) states) ; is it how we should aggregate the dataset??
         new-data (for [state new-states
                        :let [optimal-action (best-action opt-policy state)] 
-                       action (next-actions state)]
-                   [state action (compute-action-loss loss state optimal-action action)])
+                       action (next-actions state)
+                       :let [loss-value (compute-action-loss loss state optimal-action action)]]
+                   [state action loss-value])
   ;   _ (doseq [[state info] (group-by first new-data)
   ;           :let [best-next-st (second (apply min-key last info))]
   ;           :when (= seq-length (count (:topics best-next-st)))]

@@ -10,8 +10,10 @@
   (next-actions [this])
   (next-state [this action]))
 
-(defprotocol IAction
-  (action-name [this]))
+;; (defprotocol IAction
+;;   (action-name [this]))
+
+(def action-name :title)
 
 (defprotocol IActionFeatures
   (compute-features [this] [this action]))

@@ -8,6 +8,7 @@
 /checkouts
 */.lein-deps-sum
 *.swp
+*~
 */target
 */checkouts
 */.DS_Store
