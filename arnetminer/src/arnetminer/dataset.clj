@@ -7,12 +7,14 @@
             [arnetminer.core :as aapi]
             [utils.core :as u]))
 
-(def db {:subprotocol "mysql"
-         :subname "//localhost:3306/aminer_dataset"
-         :user "root"
-         :password ""})
+(def default-db
+  "An example of the DB configuration."
+  {:subprotocol "mysql"
+   :subname "//localhost:3306/aminer_dataset"
+   :user "root"
+   :password ""})
 
-(defn paper-by-key [id]
+(defn paper-by-key [db id]
   (let [results (jdbc/query db
                   (sql/select *
                     :aminer_papers
@@ -21,13 +23,21 @@
       (throw (Exception. (str "More than one paper with id: " id)))
       (first results))))
 
-(defn augment-with-abstract [paper]
-  (assoc paper :abstract (:abstract (paper-by-key (:id paper)))))
+(defn augment-with-abstract [db paper]
+  (assoc paper :abstract (:abstract (paper-by-key db (:id paper)))))
 
-(deftype AcademicSearch [delegate]
+(deftype AcademicSearch [db delegate]
   sapi/IAcademicSearch
   (-search-papers [this query params]
-    (u/fmap (sapi/-search-papers delegate query params)
-            #(mapv augment-with-abstract %))))
+    (try
+      (u/fmap (sapi/-search-papers delegate query params)
+              #(mapv (partial augment-with-abstract db) %))
+      (catch Exception e
+        (.printStackTrace e)
+        (u/->Fail (.getMessage e))))))
+  
 
-(def service (->AcademicSearch (aapi/->AcademicSearch)))
+(defn service [& {:as params}]
+  (->AcademicSearch
+   (merge default-db (:db params))
+   (aapi/->AcademicSearch (:dissoc :db params))))
