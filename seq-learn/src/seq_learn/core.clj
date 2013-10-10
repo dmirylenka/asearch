@@ -10,8 +10,10 @@
   (next-actions [this])
   (next-state [this action]))
 
-(defprotocol IAction
-  (action-name [this]))
+;; (defprotocol IAction
+;;   (action-name [this]))
+
+(def action-name :title)
 
 (defprotocol IActionFeatures
   (compute-features [this] [this action]))
@@ -63,9 +65,6 @@
                  (let [action (next-action state)]
                    (recur (next-state state action) (conj actions action)))))]
     (iter state [])))
-
-;(defn compute-state-seq [state action-seq]
-;  (butlast (reductions #(next-state %2 %1) state action-seq)))
 
 (defn- produce-ranking [transition-loss-seq]
   (let [id-transition-loss-seq (map vector (partition-by first transition-loss-seq) (rest (range)))]

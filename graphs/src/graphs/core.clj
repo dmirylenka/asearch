@@ -168,22 +168,22 @@
 (defn add-links-safe [graph from-to-pairs]
   (reduce (partial apply add-link-safe) graph from-to-pairs))
 
-(defprotocol IGraphNode ; so far used only for drawing
-  (node-id [this])
-  (node-title [this]))
+;; (defprotocol IGraphNode ; so far used only for drawing
+;;   (node-id [this])
+;;   (node-title [this]))
 
-(extend-protocol IGraphNode
-  String
-    (node-id [this] this)
-    (node-title [this] this))
+;; (extend-protocol IGraphNode
+;;   String
+;;     (node-id [this] this)
+;;     (node-title [this] this))
 
-(defrecord GraphNode [obj id-fn title-fn]
-  IGraphNode 
-    (node-id [this] (id-fn this))
-    (node-title [this] (title-fn this)))
+;; (defrecord GraphNode [obj id-fn title-fn]
+;;   IGraphNode 
+;;     (node-id [this] (id-fn this))
+;;     (node-title [this] (title-fn this)))
 
-(defn wrap-node [obj id-fn title-fn]
-  (GraphNode. obj id-fn title-fn))
+;; (defn wrap-node [obj id-fn title-fn]
+;;   (GraphNode. obj id-fn title-fn))
 
 (defn diverse-colors [key-fn values]
   (let [value->int (zipmap values (range))
@@ -198,8 +198,8 @@
   ([graph & more]
     (let [opt (apply hash-map more)
           nodes (get-nodes graph)
-          id-fn (or (:id-fn opt) node-id)
-          name-fn (or (:name-fn opt) node-title)
+          id-fn (or (:id-fn opt) str #_node-id)
+          name-fn (or (:name-fn opt) str #_node-title)
           font-fn (or (:font-fn opt) (constantly 10))
           relations (for [node nodes adj (out-links graph node)]
                       (map id-fn [node adj]))

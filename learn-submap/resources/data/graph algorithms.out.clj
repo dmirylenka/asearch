@@ -1,0 +1,16 @@
+[
+ "Computational problems in graph theory"
+ "Graph theory"
+ "Graph algorithms"
+ "Geometric graph theory"
+ "Graph connectivity"
+ "Graph coloring"
+ ;"Graph drawing"
+ "Trees (graph theory)"
+ "Graph partition"
+ ;"Spanning tree"
+ ;"Search algorithms"
+ ;"Polynomial time problems"
+ ;"Depth-first search"
+ ;"Shortest path problem"
+ ]

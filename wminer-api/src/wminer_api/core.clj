@@ -17,35 +17,11 @@
    :responseFormat "direct"})
 
 (def param-mapping
-  {:min-prob :minProbability
+  {:prob :minProbability
    :repeat-mode :repeatMode
    :link-format :linkFormat
    :response-format :responseFormat
    :source :source})
-
-;(defn wiki-articles [snippets & more]
-;  (let [opt (apply hash-map more)
-;        delim " #@ "
-;        query (string/join delim snippets)
-;        custom-params (u/map-key param-mapping (select-keys opt (keys param-mapping)))
-;        request {:form-params (-> default-params
-;                                (merge custom-params)
-;                                (assoc :source query))}
-;        wminer-url-key (or (:wminer opt) :lion)
-;        response (http/post (str (wminer-urls wminer-url-key) "wikify") request)
-;        wiki-doc (:body response)
-;        skip-single (not (false? (:skip-single opt)))
-;        get-title (fn [wiki-link]
-;                    (let [[page-title weight anchor-text] (string/split wiki-link #"\|")
-;                          anchor-text (or anchor-text wiki-link)
-;                          page-title (or page-title wiki-link)]
-;                      (when (or (.contains anchor-text " ")
-;                                (not skip-single))
-;                        page-title)))
-;        pages (fn [annotated-snippet]
-;                (let [links (map second (re-seq #"\[\[(.*?)\]\]" annotated-snippet))]
-;                  (set (map string/lower-case (keep get-title links)))))]
-;    (map pages (string/split wiki-doc (re-pattern delim)))))
 
 (def ^:private link-pattern #"<a href=\"http\://www\.en\.wikipedia\.org/wiki/(.*?)\".*? pageId=\"(.*?)\".*? linkProb=\"(.*?)\".*?>(.*?)</a>")
 
@@ -57,33 +33,19 @@
         request {:form-params (-> default-params
                                 (merge custom-params)
                                 (assoc :source query))}
-        wminer-url-key (or (:wminer opt) :lion)
+        wminer-url-key (or (:wminer opt) :waikato)
         response (http/post (str (wminer-urls wminer-url-key) "wikify") request)
         wiki-doc (:body response)
         skip-single (not (false? (:skip-single opt)))
         pages (fn [annotated-snippet]
                 (for [[_ page-title page-id link-prob fragment] (re-seq link-pattern annotated-snippet)
-                      :when (.contains fragment " ")] 
-                  [(string/lower-case page-title)
+                      ;; :when (.contains fragment " ")
+                      ] 
+                  [page-title
                    (Integer/parseInt page-id)
                    (Double/parseDouble link-prob)
                    fragment]))]
     (map pages (string/split wiki-doc (re-pattern delim)))))
-
-;(defn wiki-similarity* [term1 term2 & {:as opt}]
-;  (let [request {:form-params {:term1 term1 :term2 term2}}
-;        wminer-url-key (or (:wminer opt) :lion)
-;        response (http/post (str (wminer-urls wminer-url-key) "compare") request)
-;        xml (xml/parse (java.io.StringReader. (:body response)))]
-;    (->> xml
-;      :content
-;      (filter #(= (:tag %) :Response)) first
-;      :attrs :relatedness Double/parseDouble)))
-
-;(defn wiki-similarity [term-pairs]
-;  (for [[term1 term2] term-pairs]
-;    [[term1 term2] (wiki-similarity* term1 term2)]))
-
 
 (defn wiki-similarity [id1 id2 & {:as opt}]
   (let [request {:form-params {:id1 id1 :id2 id2}}
@@ -95,21 +57,49 @@
       (filter #(= (:tag %) :Response)) first
       :attrs :relatedness Double/parseDouble)))
 
+(defn ->wapi-category [cat]
+  (wapi/mk-category (:id cat) (:title cat)))
+
+(def explore-services
+  {:wiki-api.core/article "exploreArticle"
+   :wiki-api.core/category "exploreCategory"})
+
+(defn parent-cats [page & {:as opt}]
+  (let [request {:form-params {:id (:id page)
+                               :responseFormat "json"
+                               :parentCategories true}
+                 :as :json}
+        wminer-url-key (or (:wminer opt) :waikato)
+        page-type (or (:type page) :wiki-api.core/article)
+        service-name (explore-services page-type)
+        response (http/post (str (wminer-urls wminer-url-key) service-name) request)
+        response-article (:body response)
+        cats (:parentCategories response-article)]
+    (map ->wapi-category cats)))
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; new stuff ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 (deftype WikiService []
   wapi/IWikiService
-  (-annotate [this docs]
-    (let [doc-strings (map wapi/doc-string docs)
-          wiki-pages (wiki-articles doc-strings)]
-      (for [[doc pages] (map vector docs wiki-pages)
-            [title id prob fragment] pages]
-        (wapi/->DocArticleLink doc (wapi/->Article id title) fragment prob))))
-  (-relatedness [this article-pairs]
-    (for [[a1 a2] article-pairs
-          :let [score (wiki-similarity (wapi/article-id a1) (wapi/article-id a2))]]
-      (wapi/->ArticleRel #{a1 a2} score)))
-  (-article-categories [this article] nil)
-  (-cat-relations [this categories] nil))
+  (-annotate [this strings]
+    (wapi/-annotate this strings 0.1))
+  (-annotate [this strings prob]
+    (let [wiki-pages (wiki-articles strings :prob prob)
+          mk-link (fn [[title id prob fragment]]
+                       (wapi/->ArticleLink (wapi/mk-article id title) fragment prob))]
+      (map #(map mk-link %) wiki-pages)))
+  ;; (-relatedness [this article-pairs]
+  ;;   (for [[a1 a2] article-pairs
+  ;;         :let [score (wiki-similarity (wapi/article-id a1) (wapi/article-id a2))]]
+  ;;     (wapi/->ArticleRel #{a1 a2} score)))
+  (-article-categories [this article]
+    (parent-cats article))
+  (-cat-relations [this cats]
+    (let [cats (set cats)]
+      (for [cat cats
+            parent (parent-cats cat)
+            :when (cats parent)]
+        [cat parent])))
+)
 
 (def service (WikiService.))

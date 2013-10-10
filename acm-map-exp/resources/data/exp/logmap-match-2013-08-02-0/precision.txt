@@ -1,0 +1,56 @@
+10010185|Morphology|=|0.51|CLS                          + Phonology &#47; morphology
+10010185|Phonology|=|0.77|CLS                           + Phonology &#47; morphology
+10010183|Speech_recognition|=|0.72|CLS                  + Speech recognition
+10011103|Software_testing|=|0.71|CLS                    + Software testing and debugging
+10010182|Natural_language_generation|=|0.77|CLS         + Natural language generation
+10010181|Pragmatics|=|0.59|CLS                          ? Discourse, dialogue and pragmatics
+10010181|Discourse_analysis|=|0.59|CLS                  + Discourse, dialogue and pragmatics
+10011510|SQL|=|0.53|CLS                                 - MySQL        
+10011510|MySQL|=|0.73|CLS                               + MySQL
+10010180|Machine_translation|=|0.76|CLS                 + Machine translation
+10011511|Novell_NetWare|=|0.6|CLS                       + NetWare
+10010950|Memory_management|=|0.77|CLS                   + Memory management
+10010951|Virtual_memory|=|0.8|CLS                       + Virtual memory
+10010957|Process_management|=|0.73|CLS                  + Process management
+10010172|Distributed_algorithms|=|0.72|CLS              + Distributed algorithms
+10010179|Natural_language_processing|=|0.75|CLS         + Natural language processing
+10011547|Wikipedia|=|0.5|CLS                            + Wikipedia
+10010963|Concurrency_control|=|0.74|CLS                 + Concurrency control
+10003683|Hidden_Markov_models|=|0.74|CLS                ~ Kalman filters and hidden Markov models
+10010162|Computer_algebra_systems|=|0.71|CLS            + Computer algebra systems
+10003689|Queueing_theory|=|0.75|CLS                     + Queueing theory
+10011579|Gmail|=|0.71|CLS                               + Gmail
+10011508|MP3|=|0.52|CLS                                 + MP3
+10011112|Computer_backup|=|0.42|CLS                     ~ Backup procedures
+10011113|Evolution|=|0.5|CLS                            - Software evolution
+10010972|Software_architecture|=|0.73|CLS               + Software architectures
+10010981|Petri_nets|=|0.82|CLS                          + Petri nets
+10010989|Avionics|=|0.75|CLS                            + Avionics
+10003667|Estimation_of_densities|=|0.75|CLS             + Density estimation
+10003666|Hypothesis_testing|=|0.5|CLS                   + Hypothesis testing and confidence interval computation
+10011560|Myspace|=|0.5|CLS                              + Myspace
+10011569|National_Institutes_of_Health|=|0.5|CLS        + National Institutes of Health
+10003697|Cluster_analysis|=|0.78|CLS                    + Cluster analysis
+10010913|Documents|=|0.86|CLS                           - Documentation
+10003691|Regression_analysis|=|0.75|CLS                 + Regression analysis
+10003692|Robust_regression|=|0.76|CLS                   + Robust regression
+10003699|Exploratory_data_analysis|=|0.77|CL            + Exploratory data analysis
+10010145|Parsing|=|0.54|CLS                             + Parsing
+10010143|Formal_methods|=|0.52|CLS                      ? Program analysis
+10003694|Reliability_analysis|=|0.56|CLS                - Reliability analysis : but this is the fault of ACM?
+10003694|Survival_analysis|=|0.56|CLS                   + Survival analysis
+10010916|Measurement|=|0.73|CLS                         + Measurement
+10010919|Distributed_computing|=|0.52|CLS               + Distributed computing methodologies
+10003693|Time_series_analysis|=|0.74|CLS                + Time series analysis
+10010917|Graph_algorithms|=|0.74|CLS                    + Graph algorithms
+10003696|Dimension_reduction|=|0.75|CLS                 + Dimensionality reduction
+10010135|Axiomatic_semantics|=|0.74|CLS                 + Axiomatic semantics
+10010133|Denotational_semantics|=|0.72|CLS              + Denotational semantics
+10010918|Approximation_algorithms|=|0.75|CLS            + Approximation algorithms
+10010130|Data_types|=|0.21|CLS                          ~ Type structures
+
+logmap
+41 / 50 : perfect match
+ 3 / 50 : close match
+ 4 / 50 : wrong match
+ 2 / 50 : cannot tell

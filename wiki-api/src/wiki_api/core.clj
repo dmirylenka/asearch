@@ -1,38 +1,44 @@
 (ns wiki-api.core
   (:require [utils.core :as u]))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Protocols that MUST be implemented by Wikipedia service wrappers ;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Protocols and data types that MUST be used by Wikipedia service wrappers ;;;;;;;;;;;;;;;;
 
-(defprotocol IDocument
-  (doc-string [this]))
+;; evil. rewrite the services and apis to work on strings
+;; (defprotocol IDocument
+;;   (doc-string [this]))
 
-(extend-protocol IDocument
-  String
-  (doc-string [this] this))
+;; (extend-protocol IDocument
+;;   String
+;;   (doc-string [this] this))
 
-(defprotocol IArticle
-  (article-title [this])
-  (article-id [this]))
+;; (defrecord Article [id title])
 
-(defprotocol ICategory
-  (category-title [this])
-  (category-id [this]))
+(defn mk-article [id title]
+  {:id id
+   :title title
+   :type ::article})
 
-(defprotocol IDocArticleLink
-  (link-doc [this])
-  (link-article [this])
-  (link-fragment [this])
-  (link-strength [this]))
+(defn mk-category [id title]
+  {:id id
+   :title title
+   :type ::category})
 
-(defprotocol IArticleRel
-  (rel-articles [this])
-  (rel-strength [this]))
+(def article? (comp (partial = ::article) :type))
+
+(def category? (comp (partial = ::category) :type))
+
+;; (defrecord Category [id title])
+
+(defrecord ArticleLink [article fragment strength])
+
+;; (defrecord ArticleRel [articles strength])
 
 (defprotocol IWikiService
-  (-annotate [this docs])
+  (-annotate [this strings] [this strings prob])
   (-relatedness [this article-pairs])
   (-article-categories [this article])
-  (-cat-relations [this categories]))
+  (-cat-relations [this categories])
+  (-search [this string opt]))
 
 (defn annotate [service & docs]
   (-annotate service docs))
@@ -45,37 +51,18 @@
 (defn cat-relations [service & categories]
   (-cat-relations service categories))
 
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Records that MAY be used by Wikipedia service wrappers ;;;;;;;;;;;;;;;;
+(def search* -search)
 
-(defrecord Article [id title]
-  IArticle
-  (article-title [this] title)
-  (article-id [this] id))
-
-(defrecord Category [id title]
-  ICategory 
-  (category-title [this] title)
-  (category-id [this] id))
-
-(defrecord DocArticleLink [doc article fragment strength]
-  IDocArticleLink
-  (link-doc [this] doc)
-  (link-article [this] article)
-  (link-fragment [this] fragment)
-  (link-strength [this] strength))
-
-(defrecord ArticleRel [articles strength]
-  IArticleRel
-  (rel-articles [this] articles)
-  (rel-strength [this] strength))
+(defn search [service query & {:as opt}]
+  (search* service query opt))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Utility functions ;;;;;;;;;;;;;;;;
 
 (defn select-max-strength [links]
-  (let [sort-fn #(sort-by (comp - link-strength) %)]
+  (let [sort-fn #(sort-by (comp - :strength) %)]
     (->> links
-      (group-by (juxt link-article link-doc))
+      (group-by :article)
       (u/map-val sort-fn)
       (u/map-val first)
-      vals)))
-
+      vals
+      (sort-by :start))))

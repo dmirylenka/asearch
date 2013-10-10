@@ -1,0 +1,212 @@
+Statistics on the concepts mapped with simple title search method.
+| :nmapped | :nfailed |   :percent-mapped |
+|----------+----------+-------------------|
+|     1575 |      724 | 0.685080469769465 |
+
+Concepts successfully mapped with the corrersponding most likely articles.
+|                                               :concept |                                          :label |                                        :article |
+|--------------------------------------------------------+-------------------------------------------------+-------------------------------------------------|
+|                                  Microsoft Corporation |                           Microsoft Corporation |                                       Microsoft | +
+|               Computing standards, RFCs and guidelines |                              industry standards |                              Technical standard | ~
+|                                     Security protocols |                               security protocol |                          Cryptographic protocol | +
+|                                                  Logic |                                           Logic |                                           Logic | +
+|                                      Online algorithms |                               Online algorithms |                                Online algorithm | +
+|                         General conference proceedings |                           conference proceeding |                                     Proceedings | +
+|            Standard Performance Evaluation Corporation |     Standard Performance Evaluation Corporation |     Standard Performance Evaluation Corporation | +
+|                                 Storage virtualization |                          Storage virtualization |                          Storage virtualization | +
+|                                    Distributed storage |                             Distributed storage |                          Distributed data store | +
+|                                            Engineering |                                     Engineering |                                     Engineering | +
+|                                Social networking sites |                      social networking services |                       Social networking service | +
+|                                        Ad hoc networks |                                 Ad hoc networks |                           Mobile ad hoc network | ! imprecise acm title?
+|                                           Google Earth |                                    Google Earth |                                    Google Earth | +
+|                    Embedded and cyber-physical systems |                               embedded computer |                                 Embedded system | ! partial
+|                                       Reversible logic |                                Reversible logic |                            Reversible computing | ~
+|                     Computing Accreditation Commission |                                             cac |                   Royal Canadian Armoured Corps | - abbrev. alt. label
+|                            Algorithm design techniques |                                algorithm design |                                Algorithm design | +
+|                              Mixed / augmented reality |                               augmented reality |                               Augmented reality | + partial
+|                                             InfiniBand |                                      InfiniBand |                                      InfiniBand | +
+|                                    Energy distribution |                             Energy distribution |                    Spectral energy distribution | - ambiguous label
+|                                        Message passing |                                 Message passing |                                 Message passing | +
+|                                       Power and energy |                                energy and power |                                 Energy in Japan | ! partial; 
+|                Development frameworks and environments |                           development framework |                              Software framework | ! partial, no article
+|                                           Proof theory |                                    Proof theory |                                    Proof theory | +
+|                                         Motorola, Inc. |                                  Motorola, Inc. |                                        Motorola | +
+|        European Telecommunications Standards Institute | European Telecommunications Standards Institute | European Telecommunications Standards Institute | +
+|                                         Sustainability |                                  Sustainability |                                  Sustainability | +
+|                            Web and social media search |                                 internet search |                               Web search engine | ! partial, alt lable imprecise
+|                                  Computer-aided design |                           computer aided design |                           Computer-aided design | +
+|                                                CD-ROMs |                                          cd rom |                                          CD-ROM | +
+|                                  Mathematical analysis |                           Mathematical analysis |                           Mathematical analysis | +
+|                                       Tablet computers |                                Tablet computers |                                 Tablet computer | +
+|                                     NVIDIA Corporation |                              NVIDIA Corporation |                                          Nvidia | +
+|              Symmetric cryptography and hash functions |                          symmetric cryptography |                         Symmetric-key algorithm | + partial
+|                                      Spectra of graphs |                           spectral graph theory |                           Spectral graph theory | +
+|                      China Telecom Corporation Limited |               China Telecom Corporation Limited |                                   China Telecom | +
+|                                 Latent variable models |                           latent variable model |                           Latent variable model | +
+|                           National Academy of Sciences |                                             nas |                                             Nas | - abbrev. alt label
+|                    Computing most probable explanation |                                             mpe |                  HP Multi-Programming Executive | - abbrev. alt label
+|                                  Short Message Service |                           Short Message Service |                           Short Message Service | +
+|                                                    DSM |                       distributed shared memory |                       Distributed shared memory | +
+|                    Association for Information Systems |             Association for Information Systems |             Association for Information Systems | +
+|                                    SAS Institute, Inc. |                                             sas |                             Special Air Service | - abbrev. alt label
+|                                  Concurrent algorithms |                            concurrent algorithm |                              Parallel algorithm | +
+|                                Supply chain management |                         Supply chain management |                         Supply chain management | +
+|                 Interaction design process and methods |                                             ixd |                               Allahabad Airport | - abbrev. alt label
+|                                             Evaluation |                                      Evaluation |                                      Evaluation | +
+|                                       Markov processes |                                  markov process |                                  Markov process | +
+|                                          Ruby on Rails |                                   Ruby on Rails |                                   Ruby on Rails | +
+|                                               Matching |                               template matching |                               Template matching | +
+|    Nonmonotonic, default reasoning and belief revision |                              nonmonotonic logic |                             Non-monotonic logic | ~ partial
+|                 Content analysis and feature selection |                                content analysis |                                Content analysis | ~
+|                                              Keyboards |                                       Keyboards |                             Keyboard instrument | - ambiguous label
+|                           Computer-managed instruction |                                             cmi |                   Carmelites of Mary Immaculate | - abbrev. alt label
+|                                   Deep belief networks |                                 deep belief net |                    Restricted Boltzmann machine | + ~
+| Universal Description Discovery and Integration (UDDI) |                                            uddi | Universal Description Discovery and Integration | +
+|                              Modal and temporal logics |                                     modal logic |                                     Modal logic | ~ partial
+|                                             Web mining |                                      Web mining |                                      Web mining | +
+|                                    Network simulations |                              network simulation |                              Network simulation | +
+|                                          Approximation |                            approximation theory |                            Approximation theory | +
+|                                Apprenticeship learning |                         Apprenticeship learning |                         Apprenticeship learning | +
+|                                Motorola Mobility, Inc. |                               motorola mobility |                               Motorola Mobility | +
+|                              Denial-of-service attacks |                       denial of service attacks |                        Denial-of-service attack | +
+|                                           Cyberwarfare |                                    Cyberwarfare |                                    Cyberwarfare | +
+|                            Natural language generation |                     Natural language generation |                     Natural language generation | +
+|                                Systems Research Center |                         Systems Research Center |                     DEC Systems Research Center | +
+|                                                  Skype |                                           Skype |                                           Skype | +
+|                                              PlanetLab |                                       PlanetLab |                                       PlanetLab | +
+|                                Command line interfaces |                          command line interface |                          Command-line interface | +
+|                     Architecture description languages |              Architecture description languages |               Architecture description language | +
+|                                          Interpolation |                                   Interpolation |                                   Interpolation | +
+|                                              Photoshop |                                 adobe photoshop |                                 Adobe Photoshop | +
+|                             Geographic characteristics |                               geographic origin |                  List of wine-producing regions | - ambiguous alt label; no article
+|                                         Regularization |                                  regularisation |                                  Regularization | +
+|                   Simple Object Access Protocol (SOAP) |                   simple object access protocol |                                            SOAP | +
+|                          Oak Ridge National Laboratory |                   Oak Ridge National Laboratory |                   Oak Ridge National Laboratory | +
+|                                             Steve Jobs |                                steven paul jobs |                                      Steve Jobs | +
+|                                       Graph algorithms |                        algorithmic graph theory |                                    Graph theory | + category matches better
+|                                     Oracle Corporation |                              Oracle Corporation |                              Oracle Corporation | +
+|                                            Performance |                                     Performance |                                     Performance | - ambiguous general label
+|                          Viewpoints Research Institute |                   Viewpoints Research Institute |                   Viewpoints Research Institute | +
+|                                                  Excel |                                 excel worksheet |                                 Microsoft Excel | +
+|                                                FreeBSD |                                         FreeBSD |                                         FreeBSD | +
+|                    Stochastic control and optimization |                         stochastic optimization |                         Stochastic optimization | +. partial
+|                                   Extensible languages |                            Extensible languages |                          Extensible programming | +
+|                              Ultra-large-scale systems |                       Ultra-large-scale systems |                       Ultra-large-scale systems | +
+|                                      Document scanning |                               Document scanning |                                   Image scanner | +. no article
+|                             Clay Mathematics Institute |                      Clay Mathematics Institute |                      Clay Mathematics Institute | +
+|                                   Open source software |                                open-source tool |                            Open source software | +
+|                              Digital signal processing |                       Digital signal processing |                       Digital signal processing | +
+|                                       Browser security |                                Browser security |                                Browser security | +
+|                            Lockheed Martin Corporation |                     Lockheed Martin Corporation |                                 Lockheed Martin | +
+|                                          Field studies |                                     field study |                                  Field research | +
+|                                    Axiomatic semantics |                             Axiomatic semantics |                             Axiomatic semantics | +
+|                                       Web log analysis |                                Web log analysis |                       Web log analysis software | +
+|                            Patent and Trademark Office |       united states patent and trademark office |       United States Patent and Trademark Office | +?
+|                            Machine learning algorithms |                     Machine learning algorithms |             List of machine learning algorithms | +
+|                                 Elliot Irving Organick |                                 elliot organick |                                Elliott Organick | +
+|                                                  Blogs |                                          weblog |                                            Blog | +
+|                           Computer-aided manufacturing |                    Computer-aided manufacturing |                    Computer-aided manufacturing | +
+
+Concepts that did not map.
+|                                                       :concept |
+|----------------------------------------------------------------|
+|                                       Computational proteomics |
+|                             Probabilistic reasoning algorithms |
+|                                            Predecessor queries |
+|                                   System description languages |
+|                                            Rounding techniques |
+|                                HCI theory, concepts and models |
+|                    Visual content-based indexing and retrieval |
+|                           Unsupervised learning and clustering |
+|                                             Document filtering |
+|                                             Program constructs |
+|                                Hypertext / hypermedia creation |
+|                                    Multimedia content creation |
+|                                          Quantitative automata |
+|                                          Object identification |
+|                                           Relevance assessment |
+|                                      Network design principles |
+|                                   Computing education programs |
+|                                    Network access restrictions |
+|                                       Architecture (buildings) |
+|                        Theory of database privacy and security |
+|                                               Systems planning |
+|                                         Age-based restrictions |
+|                               Causal reasoning and diagnostics |
+|                                  Empirical software validation |
+|                   Recognition of genes and regulatory elements |
+|                                        Combinational synthesis |
+|                                          Computing occupations |
+|                                     Peer-to-peer architectures |
+|                                   Government technology policy |
+|                                         Logic and verification |
+|            Analysis and design of emerging devices and systems |
+|                                  Tightly coupled architectures |
+|                                   Distributed systems security |
+|                              Application-specific VLSI designs |
+|                                       Investigation techniques |
+|                                       Self-checking mechanisms |
+|                                                  Network games |
+|                                      Database query processing |
+|                                             Multiscale systems |
+|                                      Programmable interconnect |
+|                                       Bio-embedded electronics |
+|                                          Metallic interconnect |
+|                      Radio frequency and wireless interconnect |
+|                                           Storage class memory |
+|                                                Query operators |
+|                                    Extra-functional properties |
+|                                                 Document types |
+|                               Information-theoretic techniques |
+|                   Information accountability and usage control |
+|                                                Motif discovery |
+|                                   Health information exchanges |
+|                      VLSI system specification and constraints |
+|                     Learning in probabilistic graphical models |
+|                              Specialized information retrieval |
+|                                        Block / page strategies |
+|                                        Semantics and reasoning |
+|                                Theorem proving and SAT solving |
+|                                               Project staffing |
+|                                              Access protection |
+|                                              Search interfaces |
+|                  Publish-subscribe / event-based architectures |
+|                              Interactive learning environments |
+|                                            Format and notation |
+|                                     Theorem proving algorithms |
+|                                      High-speed input / output |
+|                                   Hierarchical representations |
+|                                        Point-to-point networks |
+|                                      Automated static analysis |
+|                               Markov-chain Monte Carlo methods |
+|                                          Personal Robots Group |
+|                                                Content ranking |
+|                                              Image composition |
+|                                       Memory and dense storage |
+|                                    Yield and cost optimization |
+|                                Abstraction and micro-operators |
+|                                                    Zilog, Inc. |
+|                                           Column based storage |
+|                              Semi-supervised learning settings |
+|                              Special-purpose algebraic systems |
+|                                         Best practices for EDA |
+|                                       Computer vision problems |
+|                          Post-manufacture validation and debug |
+|                                     Computer science education |
+|                                             SIMD architectures |
+|                              Physical sciences and engineering |
+|                               Emerging tools and methodologies |
+|                 Enterprise level and data centers power issues |
+| Ubiquitous and mobile computing theory, concepts and paradigms |
+|                                          General and reference |
+|                                              Program reasoning |
+|                                  Real-time system architecture |
+|                                        Chip-level power issues |
+|                                          Storage architectures |
+|                                               Robotic planning |
+|                                 Multimedia information systems |
+|                                    Database constraints theory |
+|                                                Type structures |
+|                                   Symbolic calculus algorithms |
+|                                          Web protocol security |
+|                                                 Answer ranking |

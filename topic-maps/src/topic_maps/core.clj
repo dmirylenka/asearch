@@ -1,64 +1,43 @@
 (ns topic-maps.core
-  (:import [clojure.lang IPersistentMap])
-  (:use [graphs.core :only [IGraphNode]])
-  (:require [wminer-api.core :as wminer-api]
-            [tagme-api.core :as tagme]
-            [wminer.core :as wminer]
+;; (:use [graphs.core :only [IGraphNode]])
+  (:require [wminer.core :as wminer]
+            [mlinking.core :as mlinking]
             [wiki-api.core :as wapi]
             [utils [core :as u]
                    [text :as t]]
-            [wikidb [core :as wikidb]
-                    [config :as conf]]
             [graphs.core :as g]
             [dot-api.core :as dot]
-            [clojure.java [jdbc :as sql]]
             [clojure [set :as set]
-                     [string :as string]]))
+            [string :as string]])
+  (:import (graphs.core Digraph)))
 
-;;;;;;;;;;;;;;;;;;;;;; Data types and all possible ways to instantiate them ;;;;;;;;;;;;;;;;;;;;;;; 
+;;;;;;;;;;;;;;;;;;;;;; Data types ;;;;;;;;;;;;;;;;;;;;;;; 
 
-(defprotocol IDocument
-  (doc-id [this])
-  (doc-string [this]))
+(def topic-title :title)
 
-(extend-protocol IDocument
-  String
-    (doc-id [this] this)
-    (doc-string [this] this))
+(def topic-id :id)
 
-(defrecord Document [obj get-id-fn string-fn]
-  IDocument
-    (doc-id [this] (get-id-fn this))
-    (doc-string [this] (string-fn this)))
+;; Type for topic maps.
+;; Consists of
+;; - topic-graph : Digraph of topics connected with parent-child relations
+;; - topic-docs : bipartite Digraph of topics and document ids with topic-docid relations
+;; - doc-map : hashmap of IDocument ids to documents
+(defrecord TopicMap [ topic-graph ^Digraph topic-docs doc-map])
 
-(extend-type topic_maps.core.IDocument
-  wapi/IDocument
-  (doc-string [this] (doc-string this)))
+;; remove this comment ;; An example concrete type for documents in the topic map.
+;; remove this comment ;; The code of the package relies only on IDocument and wiki_api.core.IDocument.
+(defrecord Document [id string]
+  ;; IDocument
+  ;; (doc-id [this] (:id this))
+  ;; wapi/IDocument
+  ;; (doc-string [this] (:docstr this))
+)
 
-(extend-type wiki_api.core.IArticle
-  g/IGraphNode
-  (node-id [this] (wapi/article-id this))
-  (node-title [this] (wapi/article-title this)))
+(def doc-id :id)
+(def doc-string :string)
+(def node-title :title)
 
-(defn wrap-doc [obj get-id-fn string-fn]
-  (Document. obj get-id-fn string-fn))
-
-(defrecord Topic [kind title]
-  IGraphNode
-    (node-id [this]
-      (str kind " " title))
-    (node-title [this] title)
-  wapi/IArticle
-    (article-title [this] title)
-    (article-id [this] (g/node-id this)))
-
-(defn mk-article [title]
-  (Topic. ::article title))
-
-(defn mk-category [title]
-  (Topic. ::category title))
-
-(defrecord TopicMap [topic-graph topic-docs doc-map])
+;;;;;;;;;;;;;;;;;;;;;; 'Primitive' functions for working with topic-maps  ;;;;;;;;;;;;;;;;;;;;;;; 
 
 (defn get-topics [topic-map]
   (g/get-nodes (:topic-graph topic-map)))
@@ -78,70 +57,95 @@
 (defn parent-topics [topic-map topic]
   (g/in-links (:topic-graph topic-map) topic))
 
-;;;;;;;;;;;;;;;;;;;;;; Helper functions for working with wikipedia database ;;;;;;;;;;;;;;;;;;;;;;; 
-
-(defn norm
-  [category-name]
-  (-> category-name
-   #_ (string/trim)
-   #_  string/lower-case
-    (string/replace #"\s+" "_")
-   #_  string/capitalize))
-
-(defn unnorm
-  [category-name]
-  (-> category-name 
-  #_ (string/trim)
-  #_ string/lower-case
-    (string/replace #"_" " ")
-    (string/replace #"\s+" " ")))
-
-(defn article-categories [page]
-  (map unnorm (wikidb/page-cats (norm page))))
-
-(defn cat-relations [cats]
-  (map #(map unnorm %) (wikidb/cat-relations (map norm cats))))
-
-;(def norm wikidb/wiki-normalize)
-;
-;(def unnorm wikidb/wiki-unnormalize)
-;
-;(defn article-categories [page]
-;  (map unnorm (wikidb/page-cats (norm page))))
-;
-;(defn cat-relations [cats]
-;  (map #(map unnorm %) (wikidb/cat-relations (map norm cats))))
-
 ;;;;;;;;;;;;;;;;;;;;;; Building the topic map and related algorithms ;;;;;;;;;;;;;;;;;;;;;;; 
 
-(defn build-topic-map [docs]
-  (sql/with-connection conf/wiki-db
-    (let [distinct-docs #(->> % (group-by doc-id) vals (map first))
-          docs (distinct-docs docs)
-          ;article-sets (wminer-api/wiki-articles (map doc-string docs))
-          annotations (wapi/select-max-strength (apply wapi/annotate tagme/service docs))
-          doc-ids (map doc-id docs)
-          articles (set (map wapi/link-article annotations))
-          article-map (u/key-map wapi/article-title articles)
-          article-titles (keys article-map)
-          article-cats (u/val-map article-categories article-titles)
-          cats (set (apply concat (vals article-cats)))
-          cat-rels (map reverse (cat-relations cats))
-          category-topics (map mk-category cats)
-          topics (concat articles category-topics)
-          topic-links (concat (map (partial map mk-category) cat-rels)
-                              (for [[article cats] article-cats
-                                    cat cats]
-                                [(mk-category cat) (article-map article)]))
-          topic-graph (-> (g/digraph)
-                        (g/add-nodes topics)
-                        (g/add-links topic-links))
-          topic-doc-links (map (juxt wapi/link-article (comp doc-id wapi/link-doc)) annotations)
-          topic-docs (-> (g/digraph)
-                      (g/add-nodes articles)
-                      (g/add-nodes doc-ids)
-                      (g/add-links topic-doc-links))]
-      (TopicMap. topic-graph topic-docs (zipmap doc-ids docs)))))
+;; (defn build-topic-map [docs]
+;;   (let [distinct-docs #(->> % (group-by doc-id) vals (map first))
+;;         docs (distinct-docs docs)
+;;         annotations (wapi/select-max-strength (apply wapi/annotate wminerservice docs))
+;;         doc-ids (map doc-id docs)
+;;         articles (set (map :article annotations))
+;;         article-cats (u/val-map #(wapi/article-categories wminer/service %) articles) 
+;;         cats (set (apply concat (vals article-cats)));
+;;         cat-rels (map reverse (apply wapi/cat-relations wminer/service cats));
+;;         topics (concat articles cats);
+;;         topic-links (concat cat-rels
+;;                             (for [[article cats] article-cats
+;;                                   cat cats]
+;;                               [cat article]))
+;;         topic-graph (-> (g/digraph)
+;;                       (g/add-nodes topics)
+;;                       (g/add-links topic-links))
+;;         topic-doc-links (map (juxt :article (comp doc-id :doc)) annotations)
+;;         topic-docs (-> (g/digraph)
+;;                      (g/add-nodes articles)
+;;                      (g/add-nodes doc-ids)
+;;                      (g/add-links topic-doc-links))]
+;;     (TopicMap. topic-graph topic-docs (zipmap doc-ids docs))))
+
+(defn init-topic-map
+  "Initializes the topic map with the supplied documents."
+  [docs]
+  (let [distinct-docs #(->> % (group-by doc-id) vals (map first))
+        docs (distinct-docs docs)
+        doc-ids (map doc-id docs)
+        topic-graph (-> (g/digraph))
+        topic-docs (-> (g/digraph)
+                     (g/add-nodes doc-ids))]
+    (TopicMap. topic-graph topic-docs (zipmap doc-ids docs))))
+
+(defn link-to-articles
+  "'Updates' the topic map by linking documents to Wikipedia articles."
+  [topic-map]
+  (let [{:keys [topic-graph topic-docs doc-map]} topic-map
+        docs (vals doc-map)
+        doc-ids (mapv doc-id docs)
+        doc-strings (mapv doc-string docs)
+        annotations (map wapi/select-max-strength
+                         (apply wapi/annotate wminer/service doc-strings))
+        _ (println "Number of articles per document:" (mapv count annotations))
+        articles (set (mapcat #(map :article %) annotations))
+        topic-doc-links ;;(mapcat (juxt :article (comp doc-id :doc)) annotations)
+          (for [[doc-id article-links] (map vector doc-ids annotations)
+                link article-links]
+            [(:article link) doc-id])]
+    (-> topic-map
+      (update-in [:topic-graph] g/add-nodes articles)
+      (update-in [:topic-docs] g/add-nodes articles)
+      (update-in [:topic-docs] g/add-links topic-doc-links))))
+
+(defn remove-singleton-articles
+  "Removes topics (articles) that occur only in 1 document."
+  [topic-map]
+  (let [singleton-articles (->> (get-topics topic-map)
+                                (filter #(= 1 (count (proper-docs topic-map %)))))]
+    (-> topic-map
+        (update-in [:topic-graph] g/remove-nodes-safe singleton-articles)
+        (update-in [:topic-docs] g/remove-nodes-safe singleton-articles))))
+
+(defn retrieve-categories
+  "Retrieves the parent categories for the articles in the topic map."
+  [topic-map]
+  (let [{:keys [topic-graph topic-docs doc-map]} topic-map
+        articles (->> (g/get-nodes topic-graph) (filter wapi/article?))
+        article-cats (u/val-map #(wapi/article-categories wminer/service %) articles) 
+        cats (set (apply concat (vals article-cats)))
+        topic-links (for [[article cats] article-cats
+                          cat cats]
+                      [cat article])]
+    (-> topic-map
+      (update-in [:topic-graph] g/add-nodes cats)
+      (update-in [:topic-graph] g/add-links topic-links))))
+
+
+(defn link-categories
+  "Links categories in the topic map with parent-child relations."
+  [topic-map]
+  (let [{:keys [topic-graph topic-docs doc-map]} topic-map
+        cats (->> (g/get-nodes topic-graph) (filter wapi/category?))
+        cat-rels (map reverse (apply wapi/cat-relations wminer/service cats))]
+    (-> topic-map
+      (update-in [:topic-graph] g/add-links cat-rels))))
 
 
 (defn merge-topics
@@ -158,13 +162,12 @@
   "Merges child-parent topics whose titles are equal up to stemming, e.g. 'compilers' -> 'compiler'"
   [topic-map]
   (let [{:keys [topic-graph topic-docs]} topic-map
-        stem-title (comp t/stem t/string->tokens wapi/article-title)
+        stem-title (comp t/stem t/string->tokens topic-title)
         similar-titles? #(= (stem-title %1) (stem-title %2))
         pairs-to-merge (for [parent (g/get-nodes topic-graph)
                              child (g/out-links topic-graph parent)
                              :when (similar-titles? parent child)]
                            [parent child])]
-   (println "Topics to merge:" pairs-to-merge)
     (reduce (partial apply merge-topics) topic-map pairs-to-merge)))
 
 (defn remove-orphan-topics
@@ -182,6 +185,13 @@
       (update-in [:topic-graph] g/remove-nodes-safe topics-to-remove)
       (update-in [:topic-docs] g/remove-nodes-safe topics-to-remove))))
 
+(defn break-loops
+  "Breaks the loops in the topic map."
+  [topic-map]
+  (-> topic-map
+    (update-in [:topic-graph] g/break-loops)
+    remove-orphan-topics))
+
 (defn main-topic [topic-map]
   (let [{:keys [topic-graph topic-docs]} topic-map
         all-nodes (g/get-nodes topic-graph)
@@ -192,11 +202,13 @@
   (let [{:keys [topic-graph topic-docs main-topic]} topic-map
         topics (g/get-nodes topic-graph)
         ancestorz (set (g/reachable topic-graph [main-topic] :direction :backward))
-        wiki-out-link-titles (set (wminer/topic-out-links (wapi/article-title main-topic)))
-        out-link-topics (filter (comp wiki-out-link-titles wapi/article-title) topics)
+        ;; _ (println ancestorz)
+        wiki-out-link-titles (set (wminer/topic-out-links (topic-title main-topic)))
+        out-link-topics (filter (comp wiki-out-link-titles topic-title) topics)
         new-out-links (->> out-link-topics
                         (remove ancestorz)
                         (map #(vector main-topic %)))]
+;;    (println "!! Main topic:" main-topic)
     (update-in topic-map [:topic-graph] g/add-links-safe new-out-links)))
 
 (defn- merged-topic-doc-graph* [topic-map]
@@ -222,7 +234,6 @@
         topic-doc-nodes (distinct (concat doc-nodes doc-containing-topics))
         new-topic-docs (g/subgraph subgraph topic-doc-nodes)
         between-topic-links (->> (g/get-links new-topic-docs)
-                              ;(filter #(instance? Topic (second %)))
                               (remove (comp doc-nodes second)))
         new-topic-docs (g/remove-links new-topic-docs between-topic-links)
         in-topic-docs (set (mapcat #(g/out-links new-topic-docs %) doc-containing-topics))
@@ -237,9 +248,10 @@
 
 (defn cum-freqs [topic-map]
   (let [{:keys [topic-graph topic-docs]} topic-map
-        topic-freq #(->> (g/reachable topic-graph [%])
-                      (mapcat (partial g/out-links topic-docs))
-                      distinct count)]
+        topic-freq (fn [node]
+                     (->> (g/reachable topic-graph [node])
+                          (mapcat (partial g/out-links topic-docs))
+                          distinct count))]
     (u/val-map topic-freq (g/get-nodes topic-graph))))
 
 (defn freq-based-font-fn [freqs]
@@ -261,60 +273,43 @@
 
 (defn freq-based-name-fn [freqs]
   (fn [topic]
-    (str (g/node-title topic) " (" (freqs topic) ")")))
+    (str (node-title topic) " (" (freqs topic) ")")))
 
-(defn display-graph [graph & more]
-  (dot/show-svg (dot/dotstr2svg (apply g/graph2dot graph more) :dot)))
+(defn graph2svg [graph & more]
+  (dot/dotstr2svg (apply g/graph2dot graph more) :dot))
 
-(defn display-topics [topic-map]
+(defn topics2svg [topic-map]
   (let [freqs (cum-freqs topic-map)
         font-fn (freq-based-font-fn freqs)]
-    (display-graph (:topic-graph topic-map)
-                    :name-fn (freq-based-name-fn freqs)
-                    :font-fn (freq-based-font-fn freqs))))
+    (graph2svg (:topic-graph topic-map)
+               :id-fn :id
+               :name-fn (freq-based-name-fn freqs)
+               :font-fn (freq-based-font-fn freqs))))
 
+(defn display-topics [topic-map]
+  (dot/show-svg (topics2svg topic-map)))
 
 ;;;;;;;;;;;;;;;;;;;;;; Temporary helper functions for playing in repl ;;;;;;;;;;;;;;;;;;;;;;; 
 
 (defn prepare-map [docs]
-  (-> docs
-    build-topic-map
-    merge-similar
-    (update-in [:topic-graph] g/break-loops)
-    remove-orphan-topics
-    (u/assocf main-topic identity :main-topic)
-    expand-main-topic))
-
-; TODO: reuse 
-#_(defn rel2dot [topic-names relations cat-freq only-pages]
-  (let [freq-scale (distinct (vals cat-freq))
-        minfreq (apply min freq-scale)
-        maxfreq (apply max freq-scale)
-        minfont 10 
-        maxfont 20
-        freqrange (max (- maxfreq minfreq) 1)
-        fontrange (- maxfont minfont)
-        font #(-> (get cat-freq % 0)
-                (* 1.0)
-                (-  minfreq)
-                (/ freqrange)
-                (* fontrange)
-                (+ minfont)
-                (Math/round))
-        page #(some #{%} only-pages)]
-    (str "digraph G { rankdir=LR; nodesep=0.1;"
-      (->> relations
-        (map #(str "\"" (second %) "\"" " -> "  "\""(first %) "\" [arrowsize=0.25, color=grey]"))
-        (string/join "; "))
-      (if (seq relations) "; " "")
-      (->> topic-names
-        (map #(str "\"" % "\"" " ["
-                   "label=" "\"" (string/replace % #"_" " ") " (" (get cat-freq % 0) ")\""
-                   ", shape=" (if-not (page %) "box" "plaintext")
-                   ", fontsize=" (font %) ", margin=\"0.1,0.1\""
-                   ", fontname=Arial"
-                   (if-not (page %) ", style=\"rounded,filled\", color=\"#eeeeff\""
-                                   "" #_", style=\"diagonals,filled\", color=\"#eeeeff\"")
-                   "]"))
-        (string/join "; "))
-     "}")))
+  (let [time (System/currentTimeMillis)]
+    (-> docs
+        (doto (#(println (count %) "results")))
+        init-topic-map
+        link-to-articles
+        (doto (#(println (count (get-topics %)) "articles in" (/ (- (System/currentTimeMillis) time) 1000.0))))
+        remove-singleton-articles
+        (doto (#(println (count (get-topics %)) "articles after removing singletons")))
+        retrieve-categories
+        (doto (#(println (count (get-topics %)) "articles and categories")))
+        link-categories
+        (doto ((fn [_] (println "categories linked"))))
+        merge-similar
+        (doto (#(println (count (get-topics %)) "articles and categories after merge")))
+        break-loops
+        (doto ((fn [_] (println "cycles broken"))))
+        (u/assocf main-topic identity :main-topic)
+        (doto (#(println "Main topic:" (:main-topic %))))
+        expand-main-topic
+        (#(submap % (get-topics %)))
+        (doto ((fn [_] (println "Computed the submap")))))))

@@ -1,0 +1,129 @@
+Experiment: mapping ACM categories to Wikipedia articles with "simple search" algorithm.
+
+Input:
+    ACM CCS taxonomy - a collection of 2299 concepts.
+        Each concept has a set of labels: - a preferred label, such as "Ubiquitous and mobile devices",
+        and possibly some alternative labels, such as "ubiquitous and mobile computing hardware" or "ubiquitous device".
+    Wikipedia articles
+        Each article has a set of labels: the article title, the titles of the redirect pages,
+        and the anchor texts of the links used to refer to the article.
+
+Output: concept -> article(concept).
+
+Function ("simple search"): concept -> article
+    maximize score(label, article)
+        for all label   in labels(concept)
+                article in articles(label)
+    where score(label, article) is the fraction of times the label refers to this article
+
+Analysis of the results:
+    
+    Coverage:
+        Of 2299 concepts,
+           1575 ~= 69% were mapped to at least one article
+            724 ~= 31% could not be mapped
+
+    Error analysis of the covered concepts:
+
+        Of 100 examined covered concepts
+            75 success - the best-scoring article perfectly matches the concept
+            25 failure - mistakes or non-optimal mathes, of which
+                12 ambiguous labels, of which
+                    4 abbreviations
+                10 no matching article in Wikipedia
+                 9 two topics in the concept
+                 1 a category is a better match
+                (the numbers don't add up to 25 as some concepts have more than one problem)
+        
+        Ambiguous labels:
+            Some of these are due do general ambiguous labels, for instance:
+                 "Performance" -> performing arts,
+                 "Keyboards" -> keyboard instruments,
+                 "Content analysis" -> something in sociology,
+                 "Energy distribution" -> "Spectral energy distribution" (rather than "Electric power distribution"))
+            In addition, in these cases there were no unambiguous alternative labels in the taxonomy.
+            Looking at the context of both concepts and articles should help here.
+            
+        Ambiguous abbreviations:
+            When alternative labels contain abbreviations - they are often ambiguous, for instance:
+                "National Academy of Sciences" -> "nas" -> "Nasir bin Olu Dara Jones"
+                "SAS Institute, Inc."          -> "sas" -> "Special Air Service"
+            In these cases the problem is that we take only the best-scoring concept label to chose the article,
+            rather then all of the concept's labels.
+            Most often ambiguous abbreviations coincide and interfere with the next problem:
+
+        No matching article:
+            In many cases the concept does not have a corresponding article in Wikipedia, perhaps because it is too specific.
+            When the other problems do not interfere, the algorithm usually finds a related (usually more general article), for instance:
+                 "Development frameworks and environments" -> "Software framework"
+                 "Deep belief networks"                    -> "Restricted Boltzmann machine" 
+                 "Document scanning"                       -> "Image scanner"
+        
+        No matching article + Ambiguous/abbreviated label:
+            In these cases the algorithm fails by selecting completely unrelated articles:
+                "Geographic characteristics" (user characteristics) -> "geographic origin" -> "List of wine-producing regions"
+                "Computing Accreditation Commission"                -> "cac"               -> "Royal Canadian Armoured Corps"
+                "Computing most probable explanation"               -> "mpe"               -> "HP Multi-Programming Executive"
+            Taking the context and other labels into account should allow us to at least filter out these mistakes.
+
+        Two topics in the concept:
+            The concept is a 'union' of two topics, and has the form "A and B".
+            In these cases the algorithm usually selects one of the two topics due to an existing alternative label:
+                "Embedded and cyber-physical systems" -> "embedded computer" -> "Embedded system"
+                "Mixed / augmented reality"           -> "augmented reality" -> "Augmented reality"
+                "Web and social media search"         -> "internet search"   -> "Web search engine"
+            This raises the question whether we always want a one-to-one match between the concepts and the articles.
+            Note that in some of these cases one of the two topics does not have a corresponding Wikipedia article
+            ("Web and social media search": there is no "social media search").
+
+        Category match:
+            Of 100 examples there was one where category rather than article would have been a better match:
+            "Graph algorithms" -> "algorithmic graph theory" -> article "Graph theory" rather then category "Graph algorithms".
+
+
+    Error analysis of the concepts not covered:
+
+        Of 50 examined concepts that did not map
+           36 = 72% no matching article in Wikipedia
+            9 = 18% no good label in ACM CCS
+            3 = 6% a category is a match
+            1 = 2% two topics in the concept
+
+        No matching article:
+             In many cases the concept does not have a corresponding article in Wikipedia.
+             Most of the times the concept is too specific, for instance:
+                "Network design principles"         -> closest match probably is "Computer network"
+                "HCI theory, concepts and models"   -> closest match probably is "HCI"
+                "Computational proteomics"          -> closest match probably is "Proteomics"
+                "Application-specific VLSI designs" -> closest match probably is "Very-large-scale integration"
+
+             Sometimes the concept looks like an 'intersection' of the two topics:
+                "Visual content-based indexing and retrieval" -> "Visual search engine" and "Content-based image retrieval"
+                "Theory of database privacy and security"     -> "Database security" and "Information privacy"
+
+             Sometimes the concept is 'in the middle' of the two topics, that is have related more general and less general topics:
+                "Network games"              -> "Video game" and "Social network game"
+                "Motif discovery"            -> "Unsupervised learning" and biology-specific "Sequence motif"
+                "Database query processing"  -> "Databases" and "Query optimization"
+                "Query operators"            -> "SQL", "Database", "Relational algebra", "Join", etc.
+            
+             Sometimes, the concept corresponds to a grouping of topics that does not map to Wikipedia:
+                "Extra-functional properties"        -> "Interoperability", "Software performance", "Software reliability", etc.
+                "Probabilistic reasoning algorithms" -> "Variable elimination", "Loopy belief propagation", "Expectation maximization", etc.            
+
+
+        No good label:
+            This happens when there is an adequate matching article, but it is not found, because the concept labels are unfortunate:
+                "Rounding techniques"           -> should have matched "Rounding"
+                "Peer-to-peer architectures"    -> should have matched "Peer-to-peer"
+                "Multiscale systems"            -> should have matched "Multiscale modeling"
+                "Relevance assessment"          -> should have matched "Relevance (information retrieval)"
+                "Network access restrictions"   -> should have matched "Network access control"
+                "Architecture (buildings)"      -> should have matched "Architecture"
+                "Storage class memory"          -> should have matched "Non-volatile memory"
+            Some of these problems could probably be solved by label preprocessing (removing general words like "techniques", "architectures", etc.).
+        
+        Category should have been a match:
+                "Computing occupations"        -> category "Computer occupations"
+                "Computing education programs" -> category "Computer science education"
+                "Program constructs"           -> category "Programming constructs"

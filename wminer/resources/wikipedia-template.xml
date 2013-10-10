@@ -37,6 +37,7 @@
 		This param is ignored unless the 'label' database is cached to memory.
 	-->
 	<minSenseProbability>0.01</minSenseProbability>
+	<!-- <minSenseProbability>0.1</minSenseProbability> -->
 
 	
 	<!--
@@ -47,6 +48,7 @@
 		This param is ignored unless the 'label' database is cached to memory.
 	-->
 	<minLinkProbability>0.005</minLinkProbability>
+	<!-- <minLinkProbability>0.05</minLinkProbability> -->
 
 
 	<!--
@@ -61,8 +63,8 @@
 		The value must correspond to an org.wikipedia.miner.db.WDatabase.DatabaseType. 
 		The priority attribute can be either 'space' (default) or 'speed'. 
 	-->
-	<!--databaseToCache priority="space">pageLinksIn</databaseToCache>
-	<databaseToCache priority="space">label</databaseToCache-->
+	<!--databaseToCache priority="space">pageLinksIn</databaseToCache-->
+	<!--databaseToCache priority="space">label</databaseToCache-->
 
 
 	<!--

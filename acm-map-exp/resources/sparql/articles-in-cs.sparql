@@ -1,0 +1,21 @@
+prefix rdf: <http://www.w3.org/2000/01/rdf-schema#>
+prefix dc: <http://purl.org/dc/terms/>
+prefix cat: <http://dbpedia.org/resource/Category:> 
+prefix dbp: <http://dbpedia.org/ontology/> 
+construct {
+?article rdf:type skos:Concept ;
+         skos:prefLabel ?label ;
+         skos:broader ?category .
+?category skos:narrower ?article .
+}
+where
+{
+  # connecting article with category
+  ?article dc:subject ?category .
+  ?article rdf:label ?label .
+  # selecting subcategories of Computer_science
+  ?category skos:broader ?parent .
+  ?parent skos:broader{0,7} cat:Computer_science .
+  ?child skos:prefLabel ?child_label .
+  ?parent skos:prefLabel ?parent_label .
+} limit 1000000
