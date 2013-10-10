@@ -7,7 +7,6 @@
                    [text :as t]]
             [graphs.core :as g]
             [dot-api.core :as dot]
-#_            [clojure.java [jdbc :as sql]]
             [clojure [set :as set]
             [string :as string]])
   (:import (graphs.core Digraph)))
@@ -63,7 +62,7 @@
 ;; (defn build-topic-map [docs]
 ;;   (let [distinct-docs #(->> % (group-by doc-id) vals (map first))
 ;;         docs (distinct-docs docs)
-;;         annotations (wapi/select-max-strength (apply wapi/annotate wminer/service docs))
+;;         annotations (wapi/select-max-strength (apply wapi/annotate wminerservice docs))
 ;;         doc-ids (map doc-id docs)
 ;;         articles (set (map :article annotations))
 ;;         article-cats (u/val-map #(wapi/article-categories wminer/service %) articles) 

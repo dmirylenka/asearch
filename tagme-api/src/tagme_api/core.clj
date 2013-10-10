@@ -6,7 +6,8 @@
 
 (def ^:private TAGME_URL "http://tagme.di.unipi.it/")
 
-(def ^:private APP_KEY "ghtma192")
+;; TODO: move to the configuration
+(def ^:private APP_KEY "")
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; old stuff ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 

@@ -11,9 +11,11 @@
             (wiki-api [core :as wapi])
             (clojure [string :as string])))
 
+
+
 (def resources
   (delay 
-    (let [wiki-conf (WikipediaConfiguration. (io/file "/Users/dmirylenka/code/asearch-modular/wminer/resources/wikipedia-template.xml")) 
+    (let [wiki-conf (WikipediaConfiguration. (io/input-stream (io/resource "wikipedia-template.xml")))
           wikipedia (Wikipedia. wiki-conf false)
           disambiguator (Disambiguator. wikipedia)
           topic-detector (TopicDetector. wikipedia disambiguator)

@@ -14,10 +14,10 @@
 (def mlinking-url "http://api.machinelinking.com/annotate")
 
 ;TODO: move to configuration
-(def ^:private mlinking-app-id "245ea9b4")
+(def ^:private mlinking-app-id "")
 
 ;TODO: move to configuration
-(def ^:private mlinking-app-key "2f779e0fc1e3c12598e4fe642f780200")
+(def ^:private mlinking-app-key "")
 
 (def default-params
   {:app_id mlinking-app-id

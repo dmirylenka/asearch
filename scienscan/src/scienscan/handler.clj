@@ -13,15 +13,15 @@
    [arxiv-api.core :as arxiv]
    [arnetminer.dataset :as aminer]
    [topic-maps.core :as tmaps]
-   [scienscan.html :as html]
-   [scienscan.submaps :as submaps]))
+   [scienscan [html :as html]
+              [submaps :as submaps]
+              [conf :as conf]]))
 
-(def options
-  {:n-topics 5
-   :query "statistical relational learning"
-   :ms-timeout 30000
-   :n-results 100
-   :submap-fn submaps/best-by-greedy-coverage})
+(def config scienscan.conf/conf)
+
+(def options (config :scienscan-opt))
+
+(def search-service (apply aminer/service (apply concat (config :aminer-opt))))
 
 (defn- cache-filename [query]
   (str "./resources/data/query-cache/" query ".clj"))
@@ -59,10 +59,10 @@
 
 (defn get-query-results [query]
   {:pre [(not (string/blank? query))]}
-  (let [timeout (options :ms-timeout)
+  (let [timeout (options :search-timeout)
         n-results (options :n-results)]
     (u/fmap
-     (sapi/search-papers aminer/service query :end n-results :timeout timeout)
+     (sapi/search-papers search-service query :end n-results :timeout timeout)
      (partial map mk-paper))))
 
 (defn build-topic-map [results]
@@ -99,13 +99,18 @@
 
 (def -summarizer (u/->Success submaps/dagger-summarizer))
 
+(defn get-ntopics-max [topic-map]
+  (if (u/success? topic-map)
+    (count (tmaps/get-topics (:value topic-map)))
+    0))
+
 (defn new-topic-map-data [query]
   {:pre [(not (string/blank? query))]}
   (println "Preparing new data:" query)
   (-> {:query query}
       (u/assocf get-query-results :query :results)
       (u/assocf build-topic-map :results :topic-map)
-      (u/assocf count (comp tmaps/get-topics :value :topic-map) :n-topics-max)
+      (u/assocf get-ntopics-max :topic-map :n-topics-max)
       (assoc :summarizer -summarizer)))
 
 (defn get-session-data [query]

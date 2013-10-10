@@ -39,7 +39,9 @@
     [:div#right "&nbsp;"]
     [:footer#footer footer-content]]])
 
-(def mas [:a {:href "http://academic.research.microsoft.com/"} "Microsoft Academic Search"])
+#_(def mas [:a {:href "http://academic.research.microsoft.com/"} "Microsoft Academic Search"])
+
+(def mas [:span "the search service"])
 
 (def try-again "Try again later.")
 

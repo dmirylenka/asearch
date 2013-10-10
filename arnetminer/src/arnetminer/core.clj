@@ -9,17 +9,15 @@
 ;TODO: move to configuration
 (def aminer-search-url "http://arnetminer.org/services/search-publication")
 
-;TODO: move to configuration
-(def ^:private aminer-user-name "dmirylenka")
-
 (def default-params
-  {:u aminer-user-name
+  {:u "oyster"
    :start 0
    :num 100})
 
 (def param-mapping
   {:query :q
-   :end :num})
+   :end :num
+   :user :u})
 
 (def default-timeout 10000)
 
@@ -98,9 +96,11 @@
             (if fail-empty? fail-if-empty u/->Success)
             (comp u/->Success #(map mk-paper %)))))
 
-(deftype AcademicSearch []
+(deftype AcademicSearch [init-params]
   sapi/IAcademicSearch
   (-search-papers [this query params]
-    (apply search-papers query (apply concat params))))
+    (apply search-papers query
+           (apply concat (merge init-params params)))))
 
-(def service (AcademicSearch.))
+(defn service [& {:as params}]
+  (->AcademicSearch params))
