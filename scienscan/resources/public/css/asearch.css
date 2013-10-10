@@ -281,3 +281,7 @@ ul {
         margin-bottom:5px;
         text-align:center;
 }
+
+body.waiting, body.waiting *{
+    cursor: wait !important;
+}

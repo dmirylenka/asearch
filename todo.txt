@@ -1,1 +1,5 @@
-
+* remove double request
+* fix 'waiting' cursor
+* make lrn-submap configurable
+* create new 'about' page
+* insert a disclamer about it being alpha version
