@@ -13,7 +13,7 @@
    [:div#subtitle "Explore the structure of scientific topics!"]
   [:div#menu
     [:a {:class "menu-link" :href "/"} "home"] "|" 
-    [:a {:class "menu-link" :href "about"} "about"]]])
+  #_ [:a {:class "menu-link" :href "about"} "about"]]])
 
 (def footer-content
   [:div#footer-content {:class "footer-content"}

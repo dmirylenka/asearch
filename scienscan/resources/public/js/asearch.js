@@ -129,7 +129,10 @@ ScienScanJs = function() {
            if (paper['ncit'] != 0) {
               return $('<span>').addClass('citation')
                     .append('&nbsp;(')
-                    .append($('<a>').attr('href', masCitUrl(paper.id))
+                    .append(
+                        //$('<a>')
+                        $('<span>')
+                       .attr('href', masCitUrl(paper.id))
                        .append('Citations: ')
                        .append(paper['ncit']))
                     .append(')');
@@ -141,7 +144,10 @@ ScienScanJs = function() {
            return $('<div>').addClass('title-download')
               .append($('<div>').addClass('title')
                     .append($('<h3>')
-                       .append($('<a>',{href:masPaperUrl(paper.id)})
+                       .append($(
+                           //'<a>',{href:masPaperUrl(paper.id)}
+                           '<a>',{}
+                       )
                           .append(paper.title))
                        .append(citationHtml(paper))));
         }
@@ -151,11 +157,12 @@ ScienScanJs = function() {
         }
 
         var authorHtml = function(author) {
-           return $('<a>').attr('href', authorUrl(author.id))
+           return $('<a>')
               .addClass('author-name-tooltip')
-              .append(author['first-name'] + " ")
-              .append(author['middle-name'] + " ")
-              .append(author['last-name']);
+              .append(author['full-name']);
+              // .append(author['first-name'] + " ")
+              // .append(author['middle-name'] + " ")
+              // .append(author['last-name']);
         }
 
         var contentHtml = function(paper) {
@@ -345,11 +352,15 @@ ScienScanJs = function() {
                    showTopic($(this).find('title').text());
                 });
                 showResults();
+                $('body').css({'cursor':'default'});
+                $('#minFreqSlider a').css({'cursor':'default'});
         }
 
         var timeLastChange = 0; 
 
         var changeMinFreqValue = function(value) {
+           $('body').css({'cursor':'wait'});
+            $('#minFreqSlider a').css({'cursor':'wait'});
            if (typeof(value) === 'undefined') {
                value = $('#minFreqSlider').slider('value'); 
            }
@@ -375,6 +386,15 @@ ScienScanJs = function() {
 }();
 
 $(document).ready(function () {
+
+    $('body').css({'cursor':'wait'})
+
+    // $('body').ajaxStart(function() {
+    //     $(this).css({'cursor':'wait'})
+    // }).ajaxStop(function() {
+    //     $(this).css({'cursor':'default'})
+    // });
+
    ScienScanJs.init();
    //TODO:rewrite in proper jquery
    $('#show-more').click(function() {
@@ -388,6 +408,11 @@ $(document).ready(function () {
       var value = sl.slider('value');
       sl.slider('value', value - 1);
       ScienScanJs.refine(sl.slider('value'));
+   });
+   $('#search-button').click(function() {
+      var sl = $('#minFreqSlider');
+      var value = sl.slider('value');
+      ScienScanJs.refine(sl.slider('value'))
    });
    $('#search-box').focus().select();
 });

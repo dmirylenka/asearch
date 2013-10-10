@@ -31,14 +31,14 @@
   (cache-data! data (:query data)))
  ([data query]
   (do
-   (spit (cache-filename query) data)
+   (spit (cache-filename query) (dissoc data :summarizer))
    data)))
 
 (defn- cached-data [query]
   (read-string (slurp (cache-filename query))))
 
 (def query-cache
-  (u/val-map cached-data [#_(options :query)]))
+  (u/val-map cached-data [(:query options)]))
 
 (defn validate [{:keys [query n-topics] :as params}]
   (let [default-params (-> options
@@ -164,7 +164,7 @@
            validate
            prepare-data
            (doto (#(session/put! :session-data %)))
-;           cache-data!
+           ;; cache-data!
            render-whole-page))
   (POST "/refine" [query n-topics]
         (println query n-topics)
