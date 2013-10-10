@@ -1,7 +1,5 @@
 (defproject unitn/search-api "0.0.1"
   :description "An API and utility functions for an academic search client wrapper."
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [clj-http "0.7.0"]
                  [unitn/utils "0.0.1"]]

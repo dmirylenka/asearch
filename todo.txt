@@ -1,18 +1,1 @@
-scienscan 0.1.0
-    + compojure based ui
-    implemented structured prediction
-    searchable website (index.html)
 
-plan
-    + implement ui with simple algorithm
-    implement structured prediction algorithm
-
-thinking:
-I need a program where I could change the algorithm of producing submap.
-
-module : topic-map, n-topics -> submap
-our dagger-based algo: topic-map -> sequence of topics/submaps
-so, more generally,
-    module: topic-map, submaps of sizes 1 to T-1 -> submap of size T
-
-    

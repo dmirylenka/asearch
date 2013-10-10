@@ -1,6 +1,5 @@
 (defproject unitn/learn-submap "0.0.1"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :description "A project for learning the topic map from 'ground truth' summaries of the topic graphs."
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [unitn/utils "0.0.1"]
                  [unitn/wiki-api "0.0.1"]

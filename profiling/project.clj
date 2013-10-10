@@ -1,4 +1,5 @@
 (defproject profiling "0.0.1"
+  :description "A playground for testing various projects of asearch-modular."
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [unitn/utils "0.0.1"]
                  [unitn/mas-api "0.0.1"]

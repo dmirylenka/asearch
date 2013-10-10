@@ -1,8 +1,5 @@
 (defproject unitn/mas-api "0.0.1"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
-  :license {:name "Eclipse Public License"
-            :url "http://www.eclipse.org/legal/epl-v10.html"}
+  :description "A wrapper for the search service of Microsoft Academic Search."
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [clj-http "0.7.0"]
                  [unitn/utils "0.0.1"]

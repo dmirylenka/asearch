@@ -1,6 +1,7 @@
 (defproject unitn/scienscan "0.0.1"
-  :description "FIXME: write description"
-  :url "http://example.com/FIXME"
+  :description "A web application for academic search.
+                Provides visual grouping of the search results."
+  :url "http://scienscan.disi.unitn.it/"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [compojure "1.1.5"]
                  [lib-noir "0.6.4"]
