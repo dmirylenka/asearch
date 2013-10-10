@@ -341,6 +341,20 @@ ScienScanJs = function() {
            return result;
         }
 
+        var waitingOn = function() {
+            $('body').addClass('waiting');
+            // $(document).bind('click mousedown dblclick', function(e){
+            //     e.preventDefault();
+            //     e.stopImmediatePropagation();
+            //     return false;
+            // });
+        }
+
+        var waitingOff = function() {
+            $('body').removeClass('waiting');
+            // $(document).unbind();
+        }
+
         var init = function() {
                 topicVisTopics = topicVisData["topic-titles"];
                 topicVisRel = topicVisData["rel"];
@@ -352,15 +366,15 @@ ScienScanJs = function() {
                    showTopic($(this).find('title').text());
                 });
                 showResults();
-                $('body').css({'cursor':'default'});
-                $('#minFreqSlider a').css({'cursor':'default'});
+//                $('body').removeClass('waiting');
+                waitingOff();
         }
 
         var timeLastChange = 0; 
 
         var changeMinFreqValue = function(value) {
-           $('body').css({'cursor':'wait'});
-            $('#minFreqSlider a').css({'cursor':'wait'});
+//           $('body').addClass('waiting');
+           waitingOn();
            if (typeof(value) === 'undefined') {
                value = $('#minFreqSlider').slider('value'); 
            }
@@ -381,19 +395,16 @@ ScienScanJs = function() {
 
         return {
                 init : init,
-                refine : changeMinFreqValue
+                refine : changeMinFreqValue,
+                'waitingOn' : waitingOn,
+                'waitingOff' : waitingOff
         }
 }();
 
 $(document).ready(function () {
 
-    $('body').css({'cursor':'wait'})
-
-    // $('body').ajaxStart(function() {
-    //     $(this).css({'cursor':'wait'})
-    // }).ajaxStop(function() {
-    //     $(this).css({'cursor':'default'})
-    // });
+//    $('body').addClass('waiting');
+   ScienScanJs.waitingOn();
 
    ScienScanJs.init();
    //TODO:rewrite in proper jquery
@@ -409,10 +420,11 @@ $(document).ready(function () {
       sl.slider('value', value - 1);
       ScienScanJs.refine(sl.slider('value'));
    });
-   $('#search-button').click(function() {
+   $('#search-controls form').submit(function() {
       var sl = $('#minFreqSlider');
       var value = sl.slider('value');
-      ScienScanJs.refine(sl.slider('value'))
+      ScienScanJs.refine(sl.slider('value'));
+      return false;
    });
    $('#search-box').focus().select();
 });

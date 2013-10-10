@@ -65,11 +65,11 @@
 
 (defn search-controls [{:keys [query]}]
   [:div#search-controls {:class "search-controls"}
-    (form-to [:get "/"]
-      [:div#search-bar {:class "search-bar"}
-       [:div#type-invitation "Type your query and see the results:"]
-        (search-field query)
-        search-button])])
+ (form-to [:get "/"]
+   [:div#search-bar {:class "search-bar"}
+   [:div#type-invitation "Type your query and see the results:"]
+   (search-field query)
+   search-button])])
 
 (defn slider [n-topics-min n-topics-max n-topics]
  (let [n-topics-min (or n-topics-min 1)
