@@ -62,7 +62,8 @@
                :string doc-string))))
 
 (defn fetch-store-input [conf query]
-  (let [search (sapi/search-papers aminer/service query :end 100 :timeout 30000)
+  (let [search-service (apply aminer/service (apply concat conf))
+        search (sapi/search-papers search-service query :end 100 :timeout 30000)
         _ (when (u/fail? search) (throw (Exception. (pr-str (:error search)))))
         mk-doc (conf :mk-doc)
         _ (when (nil? mk-doc) (throw (Exception. "Nil :mk-doc parameter")))
