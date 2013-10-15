@@ -13,21 +13,26 @@
   "Build the topic map from the search results (documents)."
   [s-results]
   (let [time (System/currentTimeMillis)]
-  (-> s-results
-   (doto (#(println (count %) "results")))
-   tmaps/init-topic-map
-   tmaps/link-to-articles
-   (doto (#(println (count (tmaps/get-topics %)) "articles in" (/ (- (System/currentTimeMillis) time) 1000.0))))
-   tmaps/remove-singleton-articles
-   (doto (#(println (count (tmaps/get-topics %)) "articles after removing singletons")))
-   tmaps/retrieve-categories
-   (doto (#(println (count (tmaps/get-topics %)) "articles and categories")))
-   tmaps/link-categories
-   (doto ((fn [_] (println "categories linked"))))
-   tmaps/merge-similar
-   (doto (#(println (count (tmaps/get-topics %)) "articles and categories after merge")))
-   tmaps/break-loops
-   (doto ((fn [_] (println "cycles broken")))))))
+    (-> s-results
+        (doto (#(println (count %) "results")))
+        tmaps/init-topic-map
+        tmaps/link-to-articles
+        (doto (#(println (count (tmaps/get-topics %)) "articles in" (/ (- (System/currentTimeMillis) time) 1000.0))))
+        ;; tmaps/remove-singleton-articles
+        ;; (doto (#(println (count (tmaps/get-topics %)) "articles after removing singletons")))
+        tmaps/retrieve-categories
+        (doto (#(println (count (tmaps/get-topics %)) "articles and categories")))
+        tmaps/link-categories
+        (doto ((fn [_] (println "categories linked"))))
+        tmaps/merge-similar
+        (doto (#(println (count (tmaps/get-topics %)) "articles and categories after merge")))
+        tmaps/break-loops
+        (doto ((fn [_] (println "cycles broken"))))
+        (u/assocf main-topic identity :main-topic)
+        (doto (#(println "Main topic:" (:main-topic %))))
+        expand-main-topic
+        (#(submap % (get-topics %)))
+        (doto ((fn [_] (println "Computed the submap")))))))
 
 (defprotocol ISummarizer
   "Abstraction for topic summarization algorithms."
