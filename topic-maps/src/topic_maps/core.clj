@@ -103,7 +103,9 @@
         doc-strings (mapv doc-string docs)
         annotations (map wapi/select-max-strength
                          (apply wapi/annotate wminer/service doc-strings))
-        _ (println "Number of articles per document:" (mapv count annotations))
+        report-doc (fn [doc annotations]
+                     (str (if (:abstract doc) 1 0) ":" (count annotations)))
+        _ (println "Document statistics: " (mapv report-doc docs annotations))
         articles (set (mapcat #(map :article %) annotations))
         topic-doc-links ;;(mapcat (juxt :article (comp doc-id :doc)) annotations)
           (for [[doc-id article-links] (map vector doc-ids annotations)
@@ -119,6 +121,7 @@
   [topic-map]
   (let [singleton-articles (->> (get-topics topic-map)
                                 (filter #(= 1 (count (proper-docs topic-map %)))))]
+    ;; (println "Singleton articles: " (map :title singleton-articles))
     (-> topic-map
         (update-in [:topic-graph] g/remove-nodes-safe singleton-articles)
         (update-in [:topic-docs] g/remove-nodes-safe singleton-articles))))
@@ -298,8 +301,8 @@
         init-topic-map
         link-to-articles
         (doto (#(println (count (get-topics %)) "articles in" (/ (- (System/currentTimeMillis) time) 1000.0))))
-        remove-singleton-articles
-        (doto (#(println (count (get-topics %)) "articles after removing singletons")))
+        ;; remove-singleton-articles
+        ;; (doto (#(println (count (get-topics %)) "articles after removing singletons")))
         retrieve-categories
         (doto (#(println (count (get-topics %)) "articles and categories")))
         link-categories
