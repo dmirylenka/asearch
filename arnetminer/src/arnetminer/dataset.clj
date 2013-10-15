@@ -36,8 +36,10 @@
         (.printStackTrace e)
         (u/->Fail (.getMessage e))))))
   
-
-(defn service [& {:as params}]
+(defn -service [params]
   (->AcademicSearch
    (merge default-db (:db params))
    (aapi/->AcademicSearch (:dissoc :db params))))
+
+(defn service [& {:as params}]
+  (-service params))
