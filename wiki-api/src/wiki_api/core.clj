@@ -3,16 +3,6 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Protocols and data types that MUST be used by Wikipedia service wrappers ;;;;;;;;;;;;;;;;
 
-;; evil. rewrite the services and apis to work on strings
-;; (defprotocol IDocument
-;;   (doc-string [this]))
-
-;; (extend-protocol IDocument
-;;   String
-;;   (doc-string [this] this))
-
-;; (defrecord Article [id title])
-
 (defn mk-article [id title]
   {:id id
    :title title
@@ -27,11 +17,7 @@
 
 (def category? (comp (partial = ::category) :type))
 
-;; (defrecord Category [id title])
-
 (defrecord ArticleLink [article fragment strength])
-
-;; (defrecord ArticleRel [articles strength])
 
 (defprotocol IWikiService
   (-annotate [this strings] [this strings prob])
@@ -41,7 +27,13 @@
   (-search [this string opt]))
 
 (defn annotate [service & docs]
-  (-annotate service docs))
+  (let [link-seqs (-annotate service docs)]
+    (doseq [links link-seqs
+            link links]
+      (when (or (clojure.string/blank? (:fragment link))
+                (clojure.string/blank? (:title (:article link))))
+        (println "Empty annotation:" link)))
+    link-seqs))
 
 (defn relatedness [service & article-pairs]
   (-relatedness service article-pairs))
