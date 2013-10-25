@@ -22,7 +22,7 @@
 ;; - topic-graph : Digraph of topics connected with parent-child relations
 ;; - topic-docs : bipartite Digraph of topics and document ids with topic-docid relations
 ;; - doc-map : hashmap of IDocument ids to documents
-(defrecord TopicMap [ topic-graph ^Digraph topic-docs doc-map])
+(defrecord TopicMap [topic-graph ^Digraph topic-docs doc-map])
 
 ;; remove this comment ;; An example concrete type for documents in the topic map.
 ;; remove this comment ;; The code of the package relies only on IDocument and wiki_api.core.IDocument.
@@ -281,13 +281,14 @@
 (defn graph2svg [graph & more]
   (dot/dotstr2svg (apply g/graph2dot graph more) :dot))
 
-(defn topics2svg [topic-map]
+(defn topics2svg [topic-map & {:as opt}]
   (let [freqs (cum-freqs topic-map)
-        font-fn (freq-based-font-fn freqs)]
-    (graph2svg (:topic-graph topic-map)
-               :id-fn :id
-               :name-fn (freq-based-name-fn freqs)
-               :font-fn (freq-based-font-fn freqs))))
+        font-fn (freq-based-font-fn freqs)
+        default-opt {:id-fn :id
+                     :name-fn (freq-based-name-fn freqs)
+                     :font-fn (freq-based-font-fn freqs)}]
+    (apply graph2svg (:topic-graph topic-map)
+           (apply concat (merge default-opt opt)))))
 
 (defn display-topics [topic-map]
   (dot/show-svg (topics2svg topic-map)))

@@ -209,10 +209,16 @@
           graph-spec (if undirected "graph" "digraph")
           graph-op (if undirected " -- " " -> ")
           weight (or (:weight opt) (constantly 1))
-          color-fn (or (:color opt) (constantly "#eeeeff"))]
+          node-style (or (:node-style opt) (constantly "rounded,filled"))
+          color-fn (or (:node-color opt) (constantly "#eeeeff"))
+          ln-color (or (:line-color opt) (constantly "grey"))
+          ln-style (or (:line-style opt) (constantly "solid"))]
       (str graph-spec " G { rankdir=LR; nodesep=0.1; splines=true;"
            (->> relations
-             (map #(str "\"" (first %) "\"" graph-op  "\""(second %) "\" [arrowsize=0.25, color=grey, weight=" (weight (map node-by-id %)) "]"))
+             (map #(str "\"" (first %) "\"" graph-op  "\""(second %) "\""
+                        " [arrowsize=0.25, color=\"" (ln-color (node-by-id (first %)) (node-by-id (second %))) "\""
+                        ", style=\"" (ln-style (node-by-id (first %)) (node-by-id (second %))) "\""
+                        ", weight=" (weight (map node-by-id %)) "]"))
              (string/join "; "))
            (if (seq relations) "; " "")
            (->> nodes
@@ -221,7 +227,8 @@
                         ", shape=box"
                         ", fontsize=" (font-fn %) ", margin=\"0.1,0.1\""
                         ", fontname=Arial"
-                        ", style=\"rounded,filled\", color=\"" (color-fn %) "\""
+                        ", fontcolor=\"#6688aa\""
+                        ", style=\"" (node-style %) "\", color=\"" (color-fn %) "\""
                         "]"))
              (string/join "; "))
            "}"))))
