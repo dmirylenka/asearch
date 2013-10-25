@@ -109,10 +109,6 @@
     (compute-features [this new-topic]
       (mapv #(%1 topic-map submap %2 new-topic) features feature-vals)))
 
-;; (extend-protocol sl/IAction
-;;   clojure.lang.IPersistentMap
-;;   (action-name [this] (:title this)))
-
 (defn empty-submap [topic-map features]
   (let [submap (tmaps/submap topic-map [] :keep [:main-topic])]
     (TopicSubmap. topic-map []
@@ -120,6 +116,12 @@
                   nil
                   features
                   (mapv #(%1 topic-map) features))))
+
+(defn get-init-state [topic-submap]
+  (->> topic-submap
+       (iterate sl/previous-state)
+       (take-while (complement nil?))
+       last))
 
 ;; Loss function used for comparing actions to the expert action.
 (defrecord ActionLoss [loss-fn]
@@ -161,7 +163,7 @@
         topic-similarity #(+ (set-overlap (topic-docs %1) (topic-docs %2))
                              (if (= %1 %2) equality-bonus 0))
         best-match (fn [topic topics]
-                     (apply max-key (partial topic-similarity topic) topics))
+                     (apply max-key (memoize (partial topic-similarity topic)) topics))
 ;        _ (println "Optimal: " optimal-topics)
 ;       _ (println "Predicted: " predicted-topics)
         iter (fn [scores optimal predicted]
@@ -173,41 +175,6 @@
                    (recur (conj scores score) (rest optimal) (disj predicted match)))))
         scores (iter '() optimal-topics predicted-topics)]
     (/ (u/avg scores) (+ 1 equality-bonus))))
-
-;; (defn match-score* [topic-map optimal-topics predicted-map]
-;;   (let [topic-graph (:topic-graph topic-map)
-;;         ; start костыль
-;;         title-topic-map (u/key-map :title (tmaps/get-topics topic-map))
-;;         predicted-topics (tmaps/get-topics predicted-map)
-;;         optimal-topics (map (comp title-topic-map :title) optimal-topics)
-;;         ; end костыль
-;;         seq-length (count optimal-topics)
-;;         predicted-topics (set predicted-topics)
-;;         _ (when (not= (count predicted-topics) (count optimal-topics))
-;;             (println "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! topic sequences of unequal sizes")
-;;             (println optimal-topics)
-;;             (println predicted-topics)
-;;             (println "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"))
-;;         optimal-topic-docs (u/val-map #(set (ftr/covered-docs topic-map [%])) (set optimal-topics ))
-;;         predicted-topic-docs #(set (tmaps/proper-docs predicted-map %))
-;;         set-overlap #(/ (count (set/intersection %1 %2))
-;;                         (count (set/union %1 %2)))
-;;         equality-bonus 0.1
-;;         topic-similarity #(+ (set-overlap (optimal-topic-docs %1) (predicted-topic-docs %2))
-;;                              (if (= (:title %1) (:title %2)) equality-bonus 0))
-;;         best-match (fn [topic topics]
-;;                      (apply max-key (partial topic-similarity topic) topics))
-;; ;       _ (println "Optimal: " optimal-topics)
-;; ;       _ (println "Predicted: " predicted-topics)
-;;         iter (fn [scores optimal predicted]
-;;                (if (empty? optimal)
-;;                  scores
-;;                  (let [topic (first optimal)
-;;                        match (best-match topic predicted)
-;;                        score (topic-similarity topic match)]
-;;                    (recur (conj scores score) (rest optimal) (disj predicted match)))))
-;;         scores (iter '() optimal-topics predicted-topics)]
-;;     (/ (u/avg scores) (+ 1 equality-bonus))))
 
 (def smart-matching-loss
   "The loss function for an action given a current non-optimal state,
@@ -223,7 +190,7 @@
   "Reads the topic map for the query, along with the 'ground truth' action(topic) sequence.
    Returns the pair [zeroth-state action-seq]."
   [conf query]
-  (let [topic-map (->> (input-file-name conf query) slurp read-string tmaps/cache-merged tmaps/cache-topic-dist)
+  (let [topic-map (->> (input-file-name conf query) slurp read-string tmaps/cache-merged #_ tmaps/cache-topic-dist)
         {:keys [topic-graph]} topic-map
         topic-names (read-string (slurp (output-file-name conf query)))
         topic-name-map (u/key-map :title (g/get-nodes topic-graph))
@@ -260,14 +227,21 @@
     (tmaps/display-topics (tmaps/submap topic-map optimal-seq))
     (tmaps/display-topics (tmaps/submap topic-map predicted-seq))))
 
-(defn train-dagger [conf queries seq-length n-iter & {:keys [evaluate]}]
-  (let [input-data (state-action-seqs conf queries)]
-    (da/dagger input-data seq-length
-               #_ topic-overlap-loss
-               smart-matching-loss
-               action-loss-01
-               n-iter
-               :evaluate evaluate)))
+(defn train-dagger
+  ([conf queries seq-length n-iter & {:keys [evaluate]}]
+     (let [input-data (state-action-seqs conf queries)]
+       (da/dagger input-data #_ seq-length
+                  #_ topic-overlap-loss
+                  smart-matching-loss
+                  action-loss-01
+                  n-iter
+                  :evaluate evaluate))))
+
+(defn train-dagger* [input-data n-iter]
+  (da/dagger input-data
+             smart-matching-loss
+             action-loss-01
+             n-iter))
 
 (defn run-fold [queries features ntopics niter fold]
   (let [query (get queries fold)]

@@ -239,7 +239,7 @@
   (let [single-word-link? #(single-noncap? (:fragment %))
         link->string #(str "[" (:fragment %) "|" (:title (:article %)) "]")
         single-word-links (filter single-word-link? links)]
-    (println (map link->string single-word-links))
+    ;; (println (map link->string single-word-links))
     (remove single-word-link? links)))
 
 (defn annotate-jointly

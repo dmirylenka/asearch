@@ -7,7 +7,14 @@
    [utils.core :as u]
    [topic-maps.core :as tmaps]
    [seq-learn.core :as sl]
-   [learn-submap.lrn-sbm :as lrn]))
+   [learn-submap.lrn-sbm :as lrn]
+   [learn-submap.database :as lrndb]))
+
+(defn test-nil-topics [topic-map]
+  (let [topics (tmaps/get-topics topic-map)]
+    (when (some nil? topics)
+      (println "Nil topic detected!!"))
+    topic-map))
 
 (defn build-topic-map
   "Build the topic map from the search results (documents)."
@@ -16,22 +23,31 @@
     (-> s-results
         (doto (#(println (count %) "results")))
         tmaps/init-topic-map
+        (test-nil-topics)
         tmaps/link-to-articles
+        (test-nil-topics)
         (doto (#(println (count (tmaps/get-topics %)) "articles in" (/ (- (System/currentTimeMillis) time) 1000.0))))
         ;; tmaps/remove-singleton-articles
         ;; (doto (#(println (count (tmaps/get-topics %)) "articles after removing singletons")))
         tmaps/retrieve-categories
+        (test-nil-topics)
         (doto (#(println (count (tmaps/get-topics %)) "articles and categories")))
         tmaps/link-categories
+        (test-nil-topics)
         (doto ((fn [_] (println "categories linked"))))
         tmaps/merge-similar
+        (test-nil-topics)
         (doto (#(println (count (tmaps/get-topics %)) "articles and categories after merge")))
         tmaps/break-loops
+        (test-nil-topics)
         (doto ((fn [_] (println "cycles broken"))))
-        (u/assocf main-topic identity :main-topic)
+        (u/assocf tmaps/main-topic identity :main-topic)
+        (test-nil-topics)
         (doto (#(println "Main topic:" (:main-topic %))))
-        expand-main-topic
-        (#(submap % (get-topics %)))
+        tmaps/expand-main-topic
+        (test-nil-topics)
+        (#(tmaps/submap % (tmaps/get-topics %)))
+        (test-nil-topics)
         (doto ((fn [_] (println "Computed the submap")))))))
 
 (defprotocol ISummarizer
@@ -51,7 +67,13 @@
   (get-summary [this]
     "Obtains the last-built summary from the summarizer."))
 
-;; Summarizer that builds the topic summary from scratch using given summarization function, without caching any intermediate results.
+(defprotocol IActiveSummarizer
+  "An abstraction for a topic summarizer that queries the user for suggestion."
+  (get-candidates [this]
+    "Returns k candidates for the best topic to be added to the current summary.")
+  (add-next-topic [this topic]))
+
+;; Summarizer That builds the topic summary from scratch using given summarization function, without caching any intermediate results.
 ;; Consists of:
 ;; - summarize-fn : summarization function
 ;; - result : stores the built summary
@@ -101,33 +123,16 @@
   (simple-summarizer best-by-greedy-coverage))
 
 
-;; (defn- grow-summaries
-;;   "Takes a vector of topic summaries (lrn/TopicSubmap) of sizes from 0 to k, and returns
-;;    a bigger vector of topic summaries of sizes from 0 to n-topics > k.
-;;    Each next summary is obtained form the previous by applying step-fn."
-;;   [summaries topic-map step-fn n-topics]
-;;   {:pre [(<= (count summaries) n-topics)]}
-;;   (letfn [iter (fn iter [result]
-;;                  (cond (empty? result)))]))
-
-
 ;; sl/IModel lrn/TopicSubmap Integer -> lrn/TopicSubmap
 (defn- grow-submap
   "Grows the topic submap to the size n-topics using the model."
   [model topic-submap n-topics]
-  {:pre [(< (count (:topics topic-submap)) n-topics)]}
-  (let [
-        ;; iter (fn iter [state]
-    ;;            (if (= (count (:topics state)) n-topics)
-    ;;              state
-    ;;              (recur (sl/next-state state (sl/best-action model state)))))]
-    ;; (iter topic-submap)
-        ]
-    (println "Growing the topic submap from size" (count (:topics topic-submap)) "to size" n-topics)
-    (->> topic-submap
-         (iterate #(sl/next-state % (sl/best-action model %)))
-         (drop-while #(< (count (:topics %)) n-topics))
-         first)))
+  {:pre [(or (zero? n-topics) (< (count (:topics topic-submap)) n-topics))]}
+  (println "Growing the topic submap from size" (count (:topics topic-submap)) "to size" n-topics)
+  (->> topic-submap
+       (iterate #(sl/next-state % (sl/best-action model %)))
+       (drop-while #(< (count (:topics %)) n-topics))
+       first))
 
 ;; lrn/TopicSubmap Integer -> lrn/TopicSubmap
 (defn- shrink-submap [topic-submap n-topics]
@@ -135,33 +140,21 @@
    by iterating through the previous states of the submap."
   [topic-submap n-topics]
   {:pre [(< (count (:topics topic-submap)) n-topics)]}
-  (let [
-;; iter (fn iter [state]
-;;                (if (= (count (:topics state)) n-topics)
-;;                  state
-;;                  (recur (sl/previous-state state)))))]
-;;    (iter topic-submap)                 
-]
-    (println "Shrinking the topic submap from size" (count (:topics topic-submap)) "to size" n-topics)
-    (->> topic-submap
-         (iterate sl/previous-state)
-         (drop-while #(> (count (:topics %)) n-topics))
-         first)))
+  (println "Shrinking the topic submap from size" (count (:topics topic-submap)) "to size" n-topics)
+  (->> topic-submap
+       (iterate sl/previous-state)
+       (drop-while #(> (count (:topics %)) n-topics))
+       first))
 
 ;; Summarizer that builds the topic summaries sequentially using DAgger
 ;; features : vector of functions
 ;; model : sl/IModel
 ;; topic-submap : lrn/TopicSubmap
 ;; result : tmaps/TopicMap
-(deftype DaggerCachingSummarizer [features model topic-submap result]
+(defrecord DaggerCachingSummarizer [features model topic-submap result]
   ISummarizer
   (build-summary [this topic-map n-topics]
     (println "summarizing into" n-topics "topics")
-    ;; {:pre [(instance? topic_maps.core.TopicMap topic-map)
-    ;;        (>= (count (tmaps/get-topics topic-map)) n-topics)]
-    ;;  :post [(not (nil? %))
-    ;;         (instance? topic_maps.core.TopicMap %)
-    ;;         (= (count (tmaps/get-topics %)) n-topics)]}
     (if (or (nil? topic-submap)
             (< (count (:topics topic-submap)) n-topics))
       (let [empty-submap (lrn/empty-submap topic-map features)
@@ -170,7 +163,36 @@
         (DaggerCachingSummarizer. features  model topic-submap* (:submap topic-submap*)))
       (let [small-submap (shrink-submap topic-submap n-topics)]
         (DaggerCachingSummarizer. features model topic-submap (:submap small-submap)))))
-  (get-summary [this] result))
+  (get-summary [this] result)
+  IActiveSummarizer
+  (get-candidates [this]
+    (sl/best-actions model topic-submap))
+  (add-next-topic [this topic]
+    (let [topic-submap* (sl/next-state topic-submap topic)]
+      (DaggerCachingSummarizer. features model topic-submap* (:submap topic-submap*)))))
+
+(defn save-ground-truth! [summarizer]
+  (let [topic-submap (.topic-submap summarizer)
+        init-state (lrn/get-init-state topic-submap)
+        action-seq (:topics topic-submap)]
+    (lrndb/save-ground-truth! (assoc init-state :features nil) action-seq)))
+
+(defn retrain-summarizer [n-iter summarizer]
+  (let [results (lrndb/read-ground-truth)
+        topic-submap (.topic-submap summarizer)
+        init-state (lrn/get-init-state topic-submap)
+        action-seq (:topics topic-submap)
+        input-data (cond-> results
+                      init-state
+                      (conj [init-state action-seq]))
+        model (lrn/train-dagger* input-data n-iter)]
+    (assoc summarizer :model model)))
+
+(defn refresh-summarizer [summarizer]
+  (assoc summarizer :topic-submap nil :result nil))
+
+(defn get-k-candidates [smr k banned?]
+  (->> smr get-candidates (remove banned?) (take k)))
 
 (defn dagger-caching-summarizer [features model]
   (DaggerCachingSummarizer. features model nil nil))

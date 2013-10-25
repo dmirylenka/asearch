@@ -71,6 +71,14 @@
    (search-field query)
    search-button])])
 
+(defn labeling-search-controls [{:keys [query]}]
+  [:div#labeling-search-controls {:class "search-controls"}
+ (form-to [:get "/labeling"]
+   [:div#search-bar {:class "search-bar"}
+   [:div#type-invitation "Type your query and see the topic graph:"]
+   (search-field query)
+   search-button])])
+
 (defn slider [n-topics-min n-topics-max n-topics]
  (let [n-topics-min (or n-topics-min 1)
        n-topics-max (min n-topics-max 25)]
@@ -83,8 +91,7 @@
                             value: " n-topics ",
                               step: 1,
                             slide: function(event, ui) {
-                                ScienScanJs.refine(ui.value);
-                                //$('#minFreqValue').val(ui.value);
+                                ScienScanJs.refine(function(value) { return ui.value; });
                               }
                             });
                             $('#minFreqValue').val($('#minFreqSlider').slider('value'));
@@ -106,17 +113,41 @@
       [:div "&uarr;"#_"&#X2197;"]
       [:div "Click on the topics to filter the results "]]]))
 
-(defn search-results [data]
+(defn labeling-topic-controls [data]
+  (let [{:keys [n-topics n-topics-max svg]} data]
+    [:div#topic-controls {:class "topic-controls"}
+     [:div#graph-title {:class "graph-title"}]
+     [:div#topic-graph {:class "topic-graph"} (:value svg)]
+     [:div#click-invitation 
+      [:div "&uarr;"#_"&#X2197;"]
+      [:div "Select the most informative topic."]]]))
+
+(defn javascript-data [data]
   (let [topic-vis-data (:value (:json data))]
     [(javascript-tag (str "var topicVisData = " (json/encode topic-vis-data) "; "))
-     (include-js "/js/asearch.js")
+     (include-js "/js/asearch.js")]))
+
+(defn search-results [data]
+  (conj (javascript-data data)
+  ;; (let [topic-vis-data (:value (:json data))]
+  ;;   [(javascript-tag (str "var topicVisData = " (json/encode topic-vis-data) "; "))
+  ;;    (include-js "/js/asearch.js")
      [:div#result-section {:class "result-section"}
       [:span#result-title {:class "result-title"}]
-      [:div#result-list {:class "result-list"}]]]))
+      [:div#result-list {:class "result-list"}]]))
 
 (defn search-page-html [data]
   (let [{:keys [query results svg]} data]
     (cond-> [(search-controls data)]
             (u/success? svg) (concat [(topic-controls data)])
+            concat (concat (javascript-data data))
             (u/success? results) (concat (search-results data))
             (u/fail? svg) (concat [(sorry (:error svg))]))))
+
+(defn labeling-page-html [data]
+  (let [{:keys [query results svg]} data]
+   (cond->
+     [(labeling-search-controls data)]
+     true (concat (javascript-data data))
+     (u/success? svg) (concat [(labeling-topic-controls data)])
+     (u/fail? svg) (concat [(sorry (:error svg))]))))

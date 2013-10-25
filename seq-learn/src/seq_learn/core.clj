@@ -19,8 +19,11 @@
   (compute-features [this] [this action]))
 
 (defprotocol IModel
-  (best-action [this state])
+  (best-actions [this state])
   (save-model [this file-name]))
+
+(defn best-action [model state]
+  (first (remove nil? (best-actions model state))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Implementation ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; 
 
@@ -42,13 +45,13 @@
 
 (defrecord SvmRankModel [svm-model]
   IModel
-  (best-action [this state]
+  (best-actions [this state]
     (let [QID 1
           RANK 0
           actions (next-actions state)
           ranking (mapv #(ActionRank. QID state % RANK) actions)
           ranking (svm-rank/predict-ranking svm-model ranking)]
-      (->> ranking (sort-by (comp - :rank)) first :action)))
+      (->> ranking (sort-by (comp - :rank)) (map :action))))
   (save-model [this file-name]
     (svm-rank/save-model svm-model file-name))) 
 
