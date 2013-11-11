@@ -21,7 +21,7 @@
 
 (def options (config :scienscan-opt))
 
-(def search-service  (apply aminer/service (apply concat (config :aminer-opt))))
+(def search-service (apply aminer/service (apply concat (config :aminer-opt))))
 
 (def n-labels (options :n-labels))
 
@@ -44,7 +44,7 @@
   (read-string (slurp (cache-filename query))))
 
 (def query-cache
-  (u/val-map cached-data [#_(:query options)]))
+  (u/val-map cached-data [(:query options)]))
 
 (defn validate [{:keys [query n-topics topic-id ban-topic-id] :as params}]
   (let [default-params (-> options
@@ -138,7 +138,10 @@
         :interface interface
         :complete-labeling complete-labeling}))))
 
-(def -summarizer (u/->Success submaps/dagger-summarizer))
+(def -summarizer
+  (->> submaps/dagger-summarizer
+      (submaps/retrain-summarizer n-dagger-iter)
+      u/->Success))
 
 (def -labeling-summarizer (u/->Success ;; (submaps/retrain-summarizer
                            ;n-dagger-iter
