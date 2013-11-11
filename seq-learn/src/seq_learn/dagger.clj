@@ -37,17 +37,18 @@
     ;(tmaps/display-topics (tmaps/submap (:topic-map (last state-seq)) (:topics (last state-seq))))
     state-seq))
 
-(defn- iterate-dagger [state-action-seqs #_init-states opt-policy #_ seq-length loss {:keys [dataset current-policy evaluate]}]
-  (println "!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NEW ITERATION")
-  (let [states (mapcat #(compute-state-seq % current-policy) state-action-seqs)
-        state-name #(:title (last (:topics %)));; debugging
-        _ (println "States: " (string/join "; " (map  state-name states)))
-        new-states states 
-          ;(remove (set (map first dataset)) states) ; is it how we should aggregate the dataset??
+(defn- iterate-dagger [state-action-seqs opt-policy loss {:keys [dataset current-policy evaluate]}]
+  (println "!!!!!!!!!!!!!!!!!!!!!!!!!!!!! NEW ITERATION ")
+  (let [states (mapcat #(butlast (compute-state-seq % current-policy)) state-action-seqs)
+        state-name #(:title (last (:topics %))) ;; debugging
+        _ (println "States: " (string/join "; " (map  state-name states))) ;; debugging
+        new-states ;; states 
+        (remove (set (map first dataset)) states) ; is it how we should aggregate the dataset??
         new-data (for [state new-states
                        :let [optimal-action (best-action opt-policy state)] 
-                       action (remove nil? (next-actions state))
-                       :let [loss-value (compute-action-loss loss state optimal-action action)]]
+                       :let [compute-loss (memoize (fn [action] (compute-action-loss loss state optimal-action action)))]
+                       action (->> (next-actions state) (remove nil?) (sort-by compute-loss))
+                       :let [loss-value (compute-loss action)]]
                    [state action loss-value])
   ;   _ (doseq [[state info] (group-by first new-data)
   ;           :let [best-next-st (second (apply min-key last info))]
@@ -69,15 +70,21 @@
                [state n]
                (recur prev-state (inc n)))))
           [init-state n] (iter-prev-state state 1)
-          ground-truth-next-state (reduce #(next-state %1 %2) init-state (take n (action-map init-state)))
+          optimal-actions (take n (action-map init-state))
+          ground-truth-next-state (reduce #(next-state %1 %2) init-state optimal-actions)
           action-loss (memoize #(compute-state-action-loss loss ground-truth-next-state state %))
-          next-act (remove nil? (next-actions state))]
-      ;; (println "Computing next actions.")
-      ;; (println "State: " (:title (last (:topics state))))
-      ;; (println "Some actions: "
-      ;;   (->> next-act (sort-by action-loss) (take 5) (map :title) (string/join ";")))
-      ;(apply min-key action-loss (next-actions state))
-      (->> next-act (sort-by action-loss)))))
+          next-act (remove nil? (next-actions state))
+          actions-taken (set (:topics state)) ;; rewrite, as it relies on a specific representation of the state
+          result (->> (remove actions-taken optimal-actions) (sort-by action-loss))
+          best-action (first result)]
+    #_  (when-not (contains? (set optimal-actions) best-action)
+        (println "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+        (println (count (action-map init-state)))
+        (println (map :title (action-map init-state)))
+        (println "Optimal actions:" (string/join "; " (map :title optimal-actions)))
+        (println "Actions taken:" (string/join "; " (map :title (:topics state))))
+        (println "Best actions:"  (string/join "; " (take n (map :title result)))))
+      result)))
 
 (defn mk-opt-policy [state-action-seqs loss]
   (let [state-action-map (into {} state-action-seqs)]
@@ -85,12 +92,12 @@
 
 (defn dagger [state-action-seqs #_ seq-length gt-loss opt-loss n-iter & {:keys [evaluate]}]
   (println "Training dagger")
-  (println "Number of state-action sequences:" (count state-action-seqs))
+;;  (println "Number of state-action sequences:" (count state-action-seqs))
   (let [init-states (map first state-action-seqs)
         opt-policy (mk-opt-policy state-action-seqs gt-loss)
         iter (fn iter [{:as model :keys [dataset current-policy]} cnt]
                (if (zero? cnt) current-policy
-                 (recur (iterate-dagger state-action-seqs #_init-states opt-policy #_ seq-length opt-loss model) (dec cnt))))
+                 (recur (iterate-dagger state-action-seqs opt-policy opt-loss model) (dec cnt))))
         action-seqs (map second state-action-seqs) ;; debugging
         ]
     (doseq [actions action-seqs]
