@@ -24,17 +24,24 @@
     {:init_state (pr-str init-state) :action_seq (pr-str action-seq)})
   nil)
 
+(defn -compute-features [features init-state]
+  (let [topic-map (:topic-map init-state)
+        feature-vals (mapv #(%1 topic-map) features)]
+    (assoc init-state
+      :features features
+      :feature-vals feature-vals)))
+
 (defn -read-ground-truth
   "Reads the 'ground truth' topic summaries from the database (see save-ground-truth)."
-  [db]
+  [features db]
   (let [results (jdbc/query db
                   (sql/select *
                     :ground_truth))]
-    (map (juxt (comp read-string :init_state)
+    (map (juxt (comp (partial -compute-features features) read-string :init_state)
                (comp read-string :action_seq)) results)))
 
-(defn read-ground-truth [& {:as db}]
-  (-read-ground-truth (merge default-db db)))
+(defn read-ground-truth [features & {:as db}]
+  (-read-ground-truth features (merge default-db db)))
 
 (defn save-ground-truth! [init-state action-seq & {:as db}]
   (-save-ground-truth! (merge default-db db) init-state action-seq))

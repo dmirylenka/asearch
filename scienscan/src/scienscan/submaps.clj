@@ -178,14 +178,15 @@
     (lrndb/save-ground-truth! (assoc init-state :features nil) action-seq)))
 
 (defn retrain-summarizer [n-iter summarizer]
-  (let [results (lrndb/read-ground-truth)
+  (let [features (:features summarizer)
+        results (lrndb/read-ground-truth features)
         topic-submap (.topic-submap summarizer)
         init-state (lrn/get-init-state topic-submap)
         action-seq (:topics topic-submap)
         input-data (cond-> results
                       init-state
                       (conj [init-state action-seq]))
-        model (lrn/train-dagger* input-data n-iter)]
+        model (time (lrn/train-dagger* input-data n-iter))]
     (assoc summarizer :model model)))
 
 (defn refresh-summarizer [summarizer]
