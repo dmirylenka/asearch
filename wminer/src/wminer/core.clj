@@ -11,8 +11,6 @@
             (wiki-api [core :as wapi])
             (clojure [string :as string])))
 
-
-
 (def resources
   (delay 
     (let [wiki-conf (WikipediaConfiguration. (io/input-stream (io/resource "wikipedia-template.xml")))
@@ -179,46 +177,74 @@
   [query & {:as opt}]
   (get-senses* query opt))
 
-(defn resolve-collisions [article-links]
-  (letfn [(intersects? [link1 link2]
-            (not (or (>= (:start link1) (:end link2))
-                     (>= (:start link2) (:end link1)))))
-          (split-intersecting [links]
-            (when-let [fst (first links)]
-              (split-with #(intersects? fst %) links)))
-          (iter [result links]
-            (if (empty? links)
-              result
-              (let [[intersecting other] (split-intersecting links)]
-                (recur (conj result (apply max-key :strength intersecting))
-                       other))))]
-    (iter [] article-links)))
+;; (defn resolve-collisions [article-links]
+;;   (letfn [(intersects? [link1 link2]
+;;             (not (or (>= (:start link1) (:end link2))
+;;                      (>= (:start link2) (:end link1)))))
+;;           (split-intersecting [links]
+;;             (when-let [fst (first links)]
+;;               (split-with #(intersects? fst %) links)))
+;;           (iter [result links]
+;;             (if (empty? links)
+;;               result
+;;               (let [[intersecting other] (split-intersecting links)]
+;;                 (recur (conj result (apply max-key :strength intersecting))
+;;                        other))))]
+;;     (iter [] article-links)))
 
-(defn resolve-collisions-as-wminer [article-links]
+(defn resolve-collisions-as-wminer
+  "Takes annotations of text fragments with Wikipedia articles, and filters them so that each text fragment points to at most one article.
+   The code is a rewrite of the resolveCollisions method of org.wikipedia.miner.annotation.tagging.DocumentTagger.
+   The rule for resolving intersecting annotations is to check if the outermost annotation has bigger weight that the maximum weight of the
+   innermost annotations multiplied by 0.8. Depending on the result either the outermost annotation or the collection of inner annotations are kept."
+  [article-links]
   (letfn [(intersects? [link1 link2]
             (not (or (>= (:start link1) (:end link2))
                      (>= (:start link2) (:end link1)))))
+          (link-report [inner-links outer-link]
+            (str (:fragment outer-link) ": "
+                 (:title (:article outer-link)) ": "
+                 (apply str (map (comp :title :article) inner-links))))
           (iter [result links]
             (if (empty? links)
               result
               (let [outer-link (first links)
                     inner-links (seq (take-while #(intersects? outer-link %) (next links)))
                     max-inner (when inner-links (apply max (map :strength inner-links)))
-                    keep-links (if (and max-inner (> (* 0.8 max-inner) (:strength outer-link)))
-;                                 (do (println "inner: " (:fragment outer-link) ":" (map (comp :title :article) inner-links))
-                                     inner-links
-                                     ;) ;; keeping inner links
-                                 ;; (do (when max-inner
-                                 ;;       (println "outer: " (:fragment outer-link) ":" (:title (:article outer-link))))
-                                     [outer-link]
-                                     )
-                                 ;; ) ;; keeping outer link
-                    rest-links (drop (count inner-links) (next links))]
+                    [rest-links keep-links] (if (and max-inner
+                                                     (> (* 0.8 max-inner)
+                                                        (:strength outer-link)))
+                                              (do #_ (println "inner links: " (link-report inner-links outer-link))
+                                                  [(next links) []])
+                                              (do #_ (when max-inner
+                                                    (println "outer link: " (link-report inner-links outer-link)))
+                                                   [(drop (count inner-links) (next links)) [outer-link]]))]
                 (recur (into result keep-links) rest-links))))]
     (iter [] (sort-by (juxt :start (comp - :end)) article-links))))
-                    
+        
+(defn all-caps? [string]
+  (= string (string/upper-case string)))
+
+(defn single-word? [string]
+  (= 1 (count (t/string->words string))))
+
+(defn single-noncap? [string]
+  (and (single-word? string)
+       (not (all-caps? string))))
+
+(defn remove-single-word-links
+  "Takes a collection of links from text fragments to Wikipedia articles,
+   and removes the links in which the text fragment consists of a single word."
+  [links]
+  (let [single-word-link? #(single-noncap? (:fragment %))
+        link->string #(str "[" (:fragment %) "|" (:title (:article %)) "]")
+        single-word-links (filter single-word-link? links)]
+    ;; (println (map link->string single-word-links))
+    (remove single-word-link? links)))
 
 (defn annotate-jointly
+  "Returns the Wikipedia articles relevant for the given strings by concatenating the strings and running wikification on the result.
+   The intersecting annotations are resolved, and for each acticle the occurrence with the strongest weight is selected. "
   [strings prob]
   (println "joint annotation")
   (let [->wapi-article-cached (comp (memoize mk-wapi-article) get-id)
@@ -228,18 +254,22 @@
                        (let [wapi-article (->wapi-article-cached topic)
                              start (.getStart position)
                              end (.getEnd position)]
-                         (->
-                          (wapi/->ArticleLink #_ string wapi-article
-                                              (.substring joint-string start end)
-                                              (.getWeight topic))
-                          (assoc :start start :end end))))]
+                         (when wapi-article
+                           (->
+                            (wapi/->ArticleLink #_ string wapi-article
+                                                (.substring joint-string start end)
+                                                (.getWeight topic))
+                            (assoc :start start :end end)))))]
     (for [[string topic-pos] doc-topics]
       (->> topic-pos
-           (map article-link)
+           (keep article-link)
+           remove-single-word-links
            resolve-collisions-as-wminer
            wapi/select-max-strength))))
 
 (defn annotate-chunked
+  "Returns the Wikipedia articles relevant for the given strings by dividing the collection of strings into chunks of a given size and
+   running annotate-jointly on each chunk."
   [snippets chunk-size & [prob]]
   {:pre [(<= 1 chunk-size)]}
   (println "chunked annotation")
