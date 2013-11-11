@@ -9,6 +9,9 @@
                 :user ""
                 :fail-empty true}
    :scienscan-opt {:n-topics 5
+                   :n-labels 8
+                   :n-candidates 5
+                   :n-dagger-iter 10
                    :query "statistical relational learning"
                    :search-timeout 30000
                    :n-results 100}})
