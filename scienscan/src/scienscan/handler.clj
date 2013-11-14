@@ -70,9 +70,10 @@
 (defn get-query-results [query]
   {:pre [(not (string/blank? query))]}
   (let [timeout (options :search-timeout)
-        n-results (options :n-results)]
+        n-results (options :n-results)
+        s-results (sapi/search-papers search-service query :end n-results :timeout timeout)]
     (u/fmap
-     (sapi/search-papers search-service query :end n-results :timeout timeout)
+     s-results
      (partial map mk-paper))))
 
 (defn build-topic-map [results]
@@ -139,13 +140,13 @@
         :complete-labeling complete-labeling}))))
 
 (def -summarizer
-  (->> submaps/dagger-summarizer
+  (->> (submaps/dagger-summarizer (options :dagger-model))
       (submaps/retrain-summarizer n-dagger-iter)
       u/->Success))
 
 (def -labeling-summarizer (u/->Success ;; (submaps/retrain-summarizer
                            ;n-dagger-iter
-                           submaps/dagger-summarizer
+                           (submaps/dagger-summarizer (options :dagger-model))
                            ));)
 
 ;; (defn fresh-summarizer (u/->Success submaps/dagger-summarizer))
