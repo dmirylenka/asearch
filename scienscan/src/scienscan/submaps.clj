@@ -46,7 +46,9 @@
         (doto (#(println "Main topic:" (:main-topic %))))
         tmaps/expand-main-topic
         (test-nil-topics)
-        (#(tmaps/submap % (tmaps/get-topics %)))
+        tmaps/cache-merged
+        (test-nil-topics)
+        (#(tmaps/submap % (tmaps/get-topics %) :keep [:main-topic :merged]))
         (test-nil-topics)
         (doto ((fn [_] (println "Computed the submap")))))))
 
@@ -198,7 +200,7 @@
 (defn dagger-caching-summarizer [features model]
   (DaggerCachingSummarizer. features model nil nil))
 
-(def dagger-summarizer
+(defn dagger-summarizer [model-file]
   (dagger-caching-summarizer
    (-> (lrn/new-app) :conf :features)
-   (sl/load-model "/Users/dmirylenka/code/asearch-modular/learn-submap/resources/models/aminer-wminer-10q-13-10-09.model")))
+   (sl/load-model model-file)))

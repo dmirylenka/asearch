@@ -2,7 +2,8 @@
   (:use topic-maps.core)
   (:require [utils.core :as u]
             [graphs.core :as g]
-            [clojure [set :as set]]))
+            [clojure [set :as set]]
+            [wiki-api.core :as wapi]))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;; Helper functions ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
@@ -422,25 +423,85 @@
   (/ (count (filter #(< (count (covered-docs submap [%])) 2) (get-topics submap)))
      (n-topics submap)))
 
-(defn avg-pc-overlap
-  "Average overlap between parent and child topic."
-  [topic-map submap]
-  (let [overlaps (for [parent (get-topics submap)
-                       child (child-topics submap parent)]
-                   (/ (count (covered-docs submap [child]))
-                      (count (covered-docs submap [parent]))))]
-    (if (empty? overlaps) 0
-      (u/avg overlaps))))
+;; (defn avg-pc-overlap
+;;   "Average overlap between parent and child topic."
+;;   [topic-map submap]
+;;   (let [overlaps (for [parent (get-topics submap)
+;;                        child (child-topics submap parent)]
+;;                    (/ (count (covered-docs submap [child]))
+;;                       (count (covered-docs submap [parent]))))]
+;;     (if (empty? overlaps) 0
+;;       (u/avg overlaps))))
 
+;; rewritten
+(defn avg-pc-overlap
+  "Average overlap between parent and child topic.
+   'Parenthood' is considered with respect to the transitive closure of the input topic graph."
+  ([topic-map] {:value 0 :overlaps []})
+  ([topic-map submap feature new-topic]
+     (let [topic-doc-closure (:closure (:merged topic-map))
+           _ (when (nil? topic-doc-closure) (println "Nil merged topic-doc graph"))
+           overlap (fn [parent child]
+                     (/ (count (covered-docs topic-map [child]))
+                        (count (covered-docs topic-map [parent]))))
+           submap-topics (get-topics submap)
+           parents (filter submap-topics (g/in-links topic-doc-closure new-topic))
+           parent-child-pairs (map #(vector % new-topic) parents)
+           new-overlaps (map (partial apply overlap) parent-child-pairs)
+           overlaps (into (:overlaps feature) new-overlaps)]
+       (assoc feature
+         :value (if (empty? overlaps)
+                  0
+                  (u/avg overlaps))
+         :overlaps overlaps))))
+
+
+;; (defn max-pc-overlap
+;;   "Maximum overlap between parent and child topic."
+;;   [topic-map submap]
+;;   (let [overlaps (for [parent (get-topics submap)
+;;                        child (child-topics submap parent)]
+;;                    (/ (count (covered-docs submap [child]))
+;;                       (count (covered-docs submap [parent]))))]
+;;     (if (empty? overlaps) 0
+;;       (apply max overlaps))))
+
+;; rewritten
 (defn max-pc-overlap
-  "Maximum overlap between parent and child topic."
-  [topic-map submap]
-  (let [overlaps (for [parent (get-topics submap)
-                       child (child-topics submap parent)]
-                   (/ (count (covered-docs submap [child]))
-                      (count (covered-docs submap [parent]))))]
-    (if (empty? overlaps) 0
-      (apply max overlaps))))
+  "Maximum overlap between parent and child topic.
+  'Parenthood' is considered with respect to the transitive closure of the input topic graph."
+  ([topic-map] {:value 0})
+  ([topic-map submap feature new-topic]
+     (let [topic-doc-closure (:closure (:merged topic-map))
+           _ (when (nil? topic-doc-closure) (println "Nil merged topic-doc graph"))
+           overlap (fn [parent child]
+                     (/ (count (covered-docs topic-map [child]))
+                        (count (covered-docs topic-map [parent]))))
+           submap-topics (get-topics submap)
+           parents (filter submap-topics (g/in-links topic-doc-closure new-topic))
+           parent-child-pairs (map #(vector % new-topic) parents)
+           overlaps (cons (:value feature) (map (partial apply overlap) parent-child-pairs))]
+       (assoc feature
+         :value (apply max overlaps)))))
+
+
+
+;; ;rewritten
+;; (defn max-overlap
+;;   "Maximum overlap between any two topics."
+;;   ([topic-map] {:value 0 :doc-sets []})
+;;   ([topic-map submap feature new-topic]
+;;    (let [{:keys [value doc-sets]} feature
+;;          new-topic-docs (set (covered-docs topic-map [new-topic]))
+;;          new-overlaps (for [docs doc-sets
+;;                             :when (and (seq docs) (seq new-topic-docs))]
+;;                         (/ (count (set/intersection docs new-topic-docs))
+;;                            (count (set/union docs new-topic-docs))))
+;;          doc-sets (conj doc-sets new-topic-docs)]
+;;      (assoc feature
+;;             :doc-sets doc-sets
+;;             :value (apply max (conj new-overlaps value))))))
+
 
 ;(defn avg-overlap
 ;  "Average overlap between any two topics."

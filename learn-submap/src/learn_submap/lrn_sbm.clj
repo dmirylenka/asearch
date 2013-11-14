@@ -21,23 +21,23 @@
 ;; NOTE: replaced average pairwise distance with the dumb feature
 ;;       because of the performance reasons
 ;; TODO: reimplement avg-pairwise-dist efficently
-#_                      ftr/avg-pairwise-dist ; 1
+#_                      ftr/avg-pairwise-dist ; 
 #_                      ftr/always-one
-                      ftr/n-connected ; 2
-                      ftr/paper-coverage ; 3
-                      ftr/direct-doc-coverage ; 4
+                      ftr/n-connected ; 1
+                      ftr/paper-coverage ; 2
+                      ftr/direct-doc-coverage ; 3
 #_                    ftr/unevenness ; 
-                      ftr/avg-topic-freq ; 5
-                      ftr/min-topic-freq ; 6
-                      ftr/avg-cum-freq ; 7
-                      ftr/min-cum-freq ; 8 
+                      ftr/avg-topic-freq ; 4
+                      ftr/min-topic-freq ; 5
+                      ftr/avg-cum-freq ; 6
+                      ftr/min-cum-freq ; 7 
 #_                    ftr/height ;  
-                      ftr/partition-coef ; 9 
-                      ftr/main-subtopics ; 10 
-#_                    ftr/avg-pc-overlap ;   
-#_                    ftr/max-pc-overlap ;   
-                      ftr/avg-overlap ; 11 
-                      ftr/max-overlap ; 12 
+                      ftr/partition-coef ; 8 
+                      ftr/main-subtopics ; 9 
+                      ftr/avg-pc-overlap ; 10
+                      ftr/max-pc-overlap ; 11
+                      ftr/avg-overlap ; 12
+                      ftr/max-overlap ; 13 
 #_                    #(ftr/subtopic-coverage %1 %2 :direct true) ;
 #_                    #(ftr/avg-n-adj %1 %2 :mode :child) ; 
 #_                    #(ftr/avg-n-adj %1 %2 :mode :parent) ; 
