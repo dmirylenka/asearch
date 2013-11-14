@@ -45,3 +45,21 @@
 
 (defn save-ground-truth! [init-state action-seq & {:as db}]
   (-save-ground-truth! (merge default-db db) init-state action-seq))
+
+
+(defn fix-merged []
+  (let [fixed-ground-truth
+          (for [[init-state action-seq] (read-ground-truth nil)]
+            [(update-in init-state [:topic-map] tmaps/cache-merged)
+             action-seq])]
+    (doseq [[init-state action-seq] fixed-ground-truth]
+      (save-ground-truth! init-state action-seq))))
+
+(defn fix-main []
+  (let [fixed-ground-truth
+          (for [[init-state action-seq] (read-ground-truth nil)]
+            [(update-in init-state [:topic-map] u/assocf tmaps/main-topic identity :main-topic)
+             action-seq])]
+    (doseq [[init-state action-seq] fixed-ground-truth]
+      (println (:main-topic (:topic-map init-state)))
+      (save-ground-truth! init-state action-seq))))

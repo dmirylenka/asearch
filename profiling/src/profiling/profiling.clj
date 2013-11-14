@@ -21,7 +21,7 @@
   (->> docs (group-by :doc-id) vals (map first)))
 
 (def results
-  (->> (sapi/search-papers aminer/service "clustering methods" :end 10)
+  (->> (sapi/search-papers (aminer/service) "clustering methods" :end 10)
        :value
        (map mk-paper)))
 
