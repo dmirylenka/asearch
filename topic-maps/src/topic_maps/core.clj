@@ -1,3 +1,4 @@
+
 (ns topic-maps.core
 ;; (:use [graphs.core :only [IGraphNode]])
   (:require [wminer.core :as wminer]
@@ -317,3 +318,5 @@
         expand-main-topic
         (#(submap % (get-topics %)))
         (doto ((fn [_] (println "Computed the submap")))))))
+
+

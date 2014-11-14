@@ -16,7 +16,7 @@
 (defn wiki-unnormalize
   "Turns 'Computer_science' into 'computer science'"
   [category-name]
-  (-> category-name 
+  (-> category-name
     (string/trim)
     string/lower-case
     (string/replace #"_" " ")
@@ -51,7 +51,7 @@
 (defn page-categories
   "Returns the list of parent categories for the page."
   [page-title]
-  (let [results (select "cl_to as result 
+  (let [results (select "cl_to as result
                            from page join categorylinks
                            on page_id = cl_from
                            where page_title = ?
@@ -63,7 +63,7 @@
 (defn super-categories
   "Returns the list of parent categories for the category."
   [category]
-  (let [results (select "cl_to as result 
+  (let [results (select "cl_to as result
                            from page join categorylinks
                            on page_id = cl_from
                            where page_title = ?
@@ -75,10 +75,10 @@
 (defn cat-relations
   "Returns the list of child-parent relations between given categories."
   [topics]
-  (let [results (select "page_title, cl_to 
+  (let [results (select "page_title, cl_to
                            from page join categorylinks
                            on page_id = cl_from
-                           where page_title in ?? 
+                           where page_title in ??
                            and cl_to in ??
                            and cl_type='subcat'
                            and page_namespace=14"
@@ -88,7 +88,7 @@
 (defn category-pages
   "Returns the list of pages belonging (directly) to the category."
   [category]
-  (let [results (select "page_title as result 
+  (let [results (select "page_title as result
                            from page join categorylinks
                            on page_id = cl_from
                            where cl_to = ?
@@ -97,10 +97,10 @@
                        category)]
     (map #(String. (:result %)) results)))
 
-(defn sub-categories 
+(defn sub-categories
   "Returns the list of the subcategories for a category."
   [category]
-  (let [results (select "page_title as result 
+  (let [results (select "page_title as result
                            from page join categorylinks
                            on page_id = cl_from
                            where cl_to = ?
@@ -111,7 +111,7 @@
 
 (defn redirect-from
   "When the page is a redirect, returns the the page it ponts to.
-   Otherwise returns nil." 
+   Otherwise returns nil."
   [redirect-page-id]
   (let [results (select "* from page
                         where page_namespace = 0
@@ -154,10 +154,10 @@
 (defn supercat-rels
   "Returns the list of child-parent relations between given categories."
   [topics]
-  (let [results (select "page_title, cl_to 
+  (let [results (select "page_title, cl_to
                            from page join categorylinks
                            on page_id = cl_from
-                           where page_title in ?? 
+                           where page_title in ??
                            and cl_type='subcat'
                            and page_namespace=14"
                         topics)]
@@ -173,6 +173,6 @@
   (let [opt (apply hash-map more)
         skip-ambiguous (get opt :skip-ambiguous true)
         categories (cats page)
-        is-ambiguous (some #{"Disambiguation_pages"} categories) 
+        is-ambiguous (some #{"Disambiguation_pages"} categories)
         should-skip (and is-ambiguous skip-ambiguous)]
     (when-not should-skip categories)))
