@@ -39,7 +39,7 @@
 (defn temp-file [ext]
   (java.io.File/createTempFile "smth" (str "." ext)))
 
-(def svm-path "/Users/dmirylenka/pkgs/svm-rank/")
+(def svm-path "/home2/dmirylenka/pkgs/svm_rank/")
 
 (defn run-svm-train! [input-file model-file & {:keys [c] :or {c 1}}]
  ; (println "-c " c)

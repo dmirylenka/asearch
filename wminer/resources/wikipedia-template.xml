@@ -7,10 +7,10 @@
 	<langCode>en</langCode>
 
 	<!-- MANDATORY: A directory containing a complete berkeley database. -->
-        <databaseDirectory>/Users/dmirylenka/data/wminer-db</databaseDirectory>
+	<databaseDirectory>/home2/hduser/wminer-db</databaseDirectory>
 
     <!-- A directory containing csv files extracted from a wikipedia dump. Caching will be faster if these are available. -->
-    <dataDirectory>/Users/dmirylenka/data/wminer-output</dataDirectory>
+    <dataDirectory>/home2/hduser/wminer-output</dataDirectory>
 
 	<!--
 		The full path to a text processor (a class that implements org.wikipedia.miner.util.text.TextProcessor)
@@ -37,7 +37,6 @@
 		This param is ignored unless the 'label' database is cached to memory.
 	-->
 	<minSenseProbability>0.01</minSenseProbability>
-	<!-- <minSenseProbability>0.1</minSenseProbability> -->
 
 	
 	<!--
@@ -48,14 +47,13 @@
 		This param is ignored unless the 'label' database is cached to memory.
 	-->
 	<minLinkProbability>0.005</minLinkProbability>
-	<!-- <minLinkProbability>0.05</minLinkProbability> -->
 
 
 	<!--
 		A file containing words (one per line) that should be ignored when detecting concepts within documents
 		and queries.
 	-->
-        <stopwordFile>/Users/dmirylenka/code/asearch-modular/wminer/resources/stoplist.txt</stopwordFile>
+	<stopwordFile>/home2/hduser/wminer-output/stoplist.txt</stopwordFile>
 
 
 	<!--
@@ -63,8 +61,9 @@
 		The value must correspond to an org.wikipedia.miner.db.WDatabase.DatabaseType. 
 		The priority attribute can be either 'space' (default) or 'speed'. 
 	-->
-	<!--databaseToCache priority="space">pageLinksIn</databaseToCache-->
-	<!--databaseToCache priority="space">label</databaseToCache-->
+	<databaseToCache priority="speed">pageLinksIn</databaseToCache>
+	<databaseToCache priority="speed">label</databaseToCache>
+	<databaseToCache priority="speed">articleParents</databaseToCache>
 
 
 	<!--
@@ -81,29 +80,29 @@
 		then article comparisons will be made without machine learning.
 	 -->
 	<articleComparisonModel>
-		/Users/dmirylenka/code/wikipedia-miner-1.2.0/models/compare/artCompare_en_In.model
+		/home2/dmirylenka/pkgs/wikipedia-miner-1.2.0/models/compare/artCompare_en_In.model
 	</articleComparisonModel>
 	
 	<!-- A file containing a Weka classifier for disambiguating pairs of labels -->
 	<labelDisambiguationModel>
-		/Users/dmirylenka/code/wikipedia-miner-1.2.0/models/compare/labelDisambig_en_In.model
+		/home2/dmirylenka/pkgs/wikipedia-miner-1.2.0/models/compare/labelDisambig_en_In.model
 	</labelDisambiguationModel>
 	
 	<!-- A file containing a Weka classifier for generating relatedness measures between labels -->
 	<labelComparisonModel>
-		/Users/dmirylenka/code/wikipedia-miner-1.2.0/models/compare/labelCompare_en_In.model
+		/home2/dmirylenka/pkgs/wikipedia-miner-1.2.0/models/compare/labelCompare_en_In.model
 	</labelComparisonModel>
 
 
 	<!-- A file containing a Weka classifier for performing automatic disambiguation of topics in documents -->
 	<topicDisambiguationModel>
-		/Users/dmirylenka/code/wikipedia-miner-1.2.0/models/annotate/disambig_en_In.model	
+		/home2/dmirylenka/pkgs/wikipedia-miner-1.2.0/models/annotate/disambig_en_In.model	
 	</topicDisambiguationModel>
 
 
 	<!-- A file containing a Weka classifier for performing automatic link detection -->
 	<linkDetectionModel>
-		/Users/dmirylenka/code/wikipedia-miner-1.2.0/models/annotate/detect_en_In.model
+		/home2/dmirylenka/pkgs/wikipedia-miner-1.2.0/models/annotate/detect_en_In.model
 	</linkDetectionModel>
 
 </wikipediaConfiguration>

@@ -10,8 +10,10 @@
   [:div#logo
    [:div#logo-scien "Scien"]
    [:div#logo-scan "Scan"]
-   [:div#subtitle "Explore the structure of scientific topics!"]
-  [:div#menu
+   #_[:div#subtitle "Explore the structure of scientific topics!"]
+   [:div#subtitle "The tool is experimental and unstable. Use at your own risk!"]
+   [:div#menu "We are working on improving it at the moment."]
+#_  [:div#menu
     [:a {:class "menu-link" :href "/"} "home"] "|" 
   #_ [:a {:class "menu-link" :href "about"} "about"]]])
 

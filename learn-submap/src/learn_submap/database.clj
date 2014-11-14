@@ -11,9 +11,9 @@
 (def default-db
   "An example of the DB configuration."
   {:subprotocol "mysql"
-   :subname "//localhost:3306/topic_sum"
-   :user "root"
-   :password ""})
+   :subname "//localhost:3306/msdataset"
+   :user "dmirylenka"
+   :password "dmirylenka"})
 
 (defn -save-ground-truth!
   "Saves the piece of 'ground truth' topic summary data into the database.

@@ -3,10 +3,10 @@
 (def conf 
   {:mas-app-id ""
    :aminer-opt {:db {:subprotocol "mysql"
-                     :subname "//localhost:3306/aminer_dataset"
-                     :user "root"
-                     :password ""}
-                :user ""
+                     :subname "//localhost:3306/msdataset"
+                     :user "dmirylenka"
+                     :password "dmirylenka"}
+                :user "dmirylenka"
                 :fail-empty true}
    :scienscan-opt {:n-topics 5
                    :n-labels 8
