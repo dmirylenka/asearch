@@ -141,7 +141,7 @@
 
 (def -summarizer
   (->> (submaps/dagger-summarizer (options :dagger-model))
-      (submaps/retrain-summarizer n-dagger-iter)
+      #_(submaps/retrain-summarizer n-dagger-iter)
       u/->Success))
 
 (def -labeling-summarizer (u/->Success ;; (submaps/retrain-summarizer
