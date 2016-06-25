@@ -202,5 +202,5 @@
 
 (defn dagger-summarizer [model-file]
   (dagger-caching-summarizer
-   (-> (lrn/new-app) :conf :features)
-   (sl/load-model model-file)))
+    (-> (lrn/new-app) :conf :features)
+    (sl/load-model model-file)))

@@ -9,7 +9,7 @@
                  [unitn/mas-api "0.0.1"]
                  [unitn/arxiv-api "0.0.1"]
                  [unitn/arnetminer "0.0.1"]
-                 [org.clojure/java.jdbc "0.3.0-alpha5"]
-                 [mysql/mysql-connector-java "5.1.26"]]
+                 [org.clojure/java.jdbc "0.4.2"]
+                 [mysql/mysql-connector-java "5.1.38"]]
   :main learn-submap.database
   :jvm-opts ["-Xmx2g" "-server"])

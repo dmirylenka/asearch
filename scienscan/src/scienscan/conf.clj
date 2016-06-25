@@ -12,7 +12,7 @@
                    :n-labels 8
                    :n-candidates 5
                    :n-dagger-iter 10
-                   :dagger-model "/home2/dmirylenka/code/asearch-modular/learn-submap/resources/models/aminer-wminer-10q-13-11-14.model"
+                   :dagger-model "/Users/dmirylenka/code/asearch-modular/learn-submap/resources/models/aminer-wminer-10q-13-11-14.model"
                    :query "statistical relational learning"
                    :search-timeout 30000
                    :n-results 100}})
