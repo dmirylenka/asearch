@@ -7,17 +7,16 @@
            (org.apache.http.conn ConnectTimeoutException)))
 
 ;TODO: move to configuration
-(def aminer-search-url "http://arnetminer.org/services/search-publication")
+(def aminer-search-url "https://api.aminer.org/api/search/pub")
 
 (def default-params
-  {:u "oyster"
-   :start 0
-   :num 100})
+  {:offset 0
+   :sort "relevance"
+   :size 100})
 
 (def param-mapping
-  {:query :q
-   :end :num
-   :user :u})
+  {:query :query
+   :end :size})
 
 (def default-timeout 10000)
 
@@ -51,7 +50,7 @@
       (u/->Fail :timeout))))
 
 (defn get-papers [aminer-response]
-  (u/->Success (:results aminer-response)))
+  (u/->Success (:result aminer-response)))
 
 (defn fail-if-empty [search-results]
   (if (empty? search-results)
@@ -63,8 +62,7 @@
 
 (defn extract-authors [paper]
   (let [ids (:author-ids paper)
-        names (when-let [author-string (:authors paper)]
-                (clojure.string/split author-string #","))
+        names (map :name (:authors paper))
         authors (map mk-author ids names)]
     (-> paper
         (dissoc :authors :author-ids)
@@ -72,11 +70,9 @@
 
 (defn mk-paper [paper]
   (-> paper
-      (clojure.set/rename-keys {:abs :abstract
-                                :pubkey :key
-                                :pubyear :year
-                                :citedby :ncit
-                                :jconfname :venue})
+      (clojure.set/rename-keys {:abstract :abstract
+                                :doi :key ;; What is this?
+                                :num_citation :ncit})
       extract-authors
       (select-keys sapi/paper-fields)
       (update-in [:author] (partial map #(select-keys % sapi/author-fields)))

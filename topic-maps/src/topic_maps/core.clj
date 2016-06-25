@@ -1,4 +1,3 @@
-
 (ns topic-maps.core
 ;; (:use [graphs.core :only [IGraphNode]])
   (:require [wminer.core :as wminer]

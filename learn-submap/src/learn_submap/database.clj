@@ -46,7 +46,6 @@
 (defn save-ground-truth! [init-state action-seq & {:as db}]
   (-save-ground-truth! (merge default-db db) init-state action-seq))
 
-
 (defn fix-merged []
   (let [fixed-ground-truth
           (for [[init-state action-seq] (read-ground-truth nil)]

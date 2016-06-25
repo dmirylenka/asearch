@@ -11,7 +11,7 @@
    [search-api.search-api :as sapi]
    [mas-api.core :as mas]
    [arxiv-api.core :as arxiv]
-   [arnetminer.dataset :as aminer]
+   [arnetminer.core :as aminer]
    [topic-maps.core :as tmaps]
    [scienscan [html :as html]
               [submaps :as submaps]

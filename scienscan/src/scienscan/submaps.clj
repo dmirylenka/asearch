@@ -23,33 +23,33 @@
     (-> s-results
         (doto (#(println (count %) "results")))
         tmaps/init-topic-map
-        (test-nil-topics)
+;;      (test-nil-topics)
         tmaps/link-to-articles
-        (test-nil-topics)
+;;        (test-nil-topics)
         (doto (#(println (count (tmaps/get-topics %)) "articles in" (/ (- (System/currentTimeMillis) time) 1000.0))))
         ;; tmaps/remove-singleton-articles
         ;; (doto (#(println (count (tmaps/get-topics %)) "articles after removing singletons")))
         tmaps/retrieve-categories
-        (test-nil-topics)
+;;        (test-nil-topics)
         (doto (#(println (count (tmaps/get-topics %)) "articles and categories")))
         tmaps/link-categories
-        (test-nil-topics)
+;;        (test-nil-topics)
         (doto ((fn [_] (println "categories linked"))))
         tmaps/merge-similar
-        (test-nil-topics)
+;;        (test-nil-topics)
         (doto (#(println (count (tmaps/get-topics %)) "articles and categories after merge")))
         tmaps/break-loops
-        (test-nil-topics)
+;;        (test-nil-topics)
         (doto ((fn [_] (println "cycles broken"))))
         (u/assocf tmaps/main-topic identity :main-topic)
-        (test-nil-topics)
+;;        (test-nil-topics)
         (doto (#(println "Main topic:" (:main-topic %))))
         tmaps/expand-main-topic
-        (test-nil-topics)
+;;        (test-nil-topics)
         tmaps/cache-merged
-        (test-nil-topics)
+;;        (test-nil-topics)
         (#(tmaps/submap % (tmaps/get-topics %) :keep [:main-topic :merged]))
-        (test-nil-topics)
+;;        (test-nil-topics)
         (doto ((fn [_] (println "Computed the submap")))))))
 
 (defprotocol ISummarizer
